@@ -3,7 +3,7 @@ package http
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"pipefree/pkg/pipe/http/api"
+	"github.com/yxxchange/pipefree/pkg/http/api"
 )
 
 func Launch() {

@@ -6,5 +6,6 @@ import (
 )
 
 func HealthCheck(ctx *gin.Context) {
+	// TODO: do more
 	http.ResponseOK(ctx)
 }
