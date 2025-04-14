@@ -3,8 +3,8 @@ package method
 import (
 	"container/heap"
 	"errors"
-	"pipefree/pkg/interfaces"
-	"pipefree/pkg/pipe/data"
+	"github.com/yxxchange/pipefree/pkg/interfaces"
+	"github.com/yxxchange/pipefree/pkg/pipe/data"
 )
 
 type TopologyNodes []*TopologyNode

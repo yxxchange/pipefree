@@ -2,7 +2,7 @@ package method
 
 import (
 	"fmt"
-	"pipefree/pkg/pipe/data"
+	"github.com/yxxchange/pipefree/pkg/pipe/data"
 	"testing"
 )
 

@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"pipefree/pkg/pipe/http"
+	"github.com/yxxchange/pipefree/pkg/http"
 )
 
 func HealthCheck(ctx *gin.Context) {

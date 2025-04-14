@@ -1,4 +1,4 @@
-module pipefree
+module github.com/yxxchange/pipefree
 
 go 1.22.0
 
