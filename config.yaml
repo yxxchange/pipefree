@@ -1,0 +1,26 @@
+app:
+  name: pipeFree
+  version: 1.0.0
+  description: A simple application to demonstrate configuration management.
+  deployment:
+    mode: dev
+    debug: true
+
+http:
+  port: 8080
+
+database:
+  type: mysql
+  host: localhost
+  port: 3306
+  password: password
+
+redis:
+  host: localhost
+  port: 6379
+  password: password
+
+etcd:
+  host: localhost
+  port: 2379
+  password: password

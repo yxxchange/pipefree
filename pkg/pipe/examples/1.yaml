@@ -1,0 +1,67 @@
+apiVersion: pipeline.pipe/v1
+kind: Pipeline
+metadata:
+  name: my-pipeline
+  namespace: default
+  type: compound
+  desc: "A sample pipeline with build, test, and deploy stages"
+  runtime_uuid: "pipeline-12345"
+  resource_version: 1
+spec:
+  parallelism: 2
+  timeout: "10m"
+  parameters:
+    image: myapp:latest
+    environment: production
+graph:
+  edges:
+    - from: build
+      to: test
+    - from: build
+      to: deploy
+    - from: test
+      to: deploy
+  nodes:
+    - apiVersion: pipeline.pipe/v1
+      kind: Task
+      metadata:
+        name: build
+        type: task
+        desc: "Docker image build stage"
+      spec:
+        command: docker build -t myapp .
+        workingDir: /src
+      status:
+        phase: Succeeded
+        chains:
+          - info: "Build completed successfully"
+    - apiVersion: pipeline.pipe/v1
+      kind: Task
+      metadata:
+        name: test
+        type: task
+        desc: "Run unit and integration tests"
+      spec:
+        command: go test ./...
+      status:
+        phase: Running
+        chains:
+          - info: "Tests started"
+    - apiVersion: pipeline.pipe/v1
+      kind: Task
+      metadata:
+        name: deploy
+        type: task
+        desc: "Deploy to Kubernetes"
+      spec:
+        command: kubectl apply -f deployment.yaml
+      status:
+        phase: Pending
+        chains: []
+status:
+  phase: Running
+  chains:
+    - info: "Pipeline started"
+  customize:
+    - {"key": "started_at", "value": "2023-10-01T12:00:00Z"}
+    - {"key": "creator", "value": "admin"}
