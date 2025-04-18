@@ -1,8 +1,9 @@
-package http
+package view
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/yxxchange/pipefree/pkg/http"
 	"time"
 )
 
@@ -61,7 +62,7 @@ func ResponseErrorWithCode(ctx *gin.Context, code Code, err error) {
 }
 
 func calculateCost(ctx *gin.Context) string {
-	v, ok := ctx.Get(MetricTimeKey)
+	v, ok := ctx.Get(http.MetricTimeKey)
 	if !ok {
 		return ""
 	}

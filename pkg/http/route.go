@@ -7,14 +7,14 @@ import (
 )
 
 func Launch() {
-	r := gin.Default(addMiddleware, initRoute)
+	r := gin.Default(initMiddleware, initRoute)
 	err := r.Run(viper.GetString("http.port"))
 	if err != nil {
 		panic(err)
 	}
 }
 
-func addMiddleware(r *gin.Engine) {
+func initMiddleware(r *gin.Engine) {
 	r.Use(MetricTimeCost)
 }
 

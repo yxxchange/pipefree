@@ -21,6 +21,8 @@ var (
 type Orchestrator struct {
 	ctx *OrcaCtx
 	mu  sync.Mutex
+
+	Dispatcher
 }
 
 var _ interfaces.Orchestrator[*OrcaCtx] = &Orchestrator{}
