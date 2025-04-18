@@ -2,10 +2,10 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/yxxchange/pipefree/pkg/view"
+	"github.com/yxxchange/pipefree/pkg/http/utils"
 )
 
 func HealthCheck(ctx *gin.Context) {
 	// TODO: do more
-	view.ResponseOK(ctx)
+	utils.ResponseOK(ctx)
 }

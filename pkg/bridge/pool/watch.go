@@ -1,85 +1,54 @@
 package pool
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/yxxchange/pipefree/pkg/view"
 	"sync"
 )
 
-const (
-	ChunkedEmptyBlock = "0\r\n\r\n"
-)
-
-type WatchParam struct {
-	Namespace string `uri:"namespace" binding:"required"`
-	Name      string `uri:"name" binding:"required"`
-	Kind      string `query:"kind" binding:"required"`
-}
-
-type WatchCtx struct {
-	mu    sync.Mutex
-	ctx   *gin.Context
-	param WatchParam
+type Connection interface {
+	ConnectionType() string
+	Write(data interface{}) error
 }
 
 var pool *ConnectionPool
 
 type ConnectionPool struct {
 	mutex sync.Mutex
-	pool  map[string][]*WatchCtx
+	pool  map[string][]Connection
 }
 
 func GetPool() *ConnectionPool {
 	if pool == nil {
 		pool = &ConnectionPool{
-			pool: make(map[string][]*WatchCtx),
+			pool: make(map[string][]Connection),
 		}
 	}
 	return pool
 }
 
-func (c *ConnectionPool) Store(ctx *WatchCtx) {
+func (c *ConnectionPool) Register(conn Connection) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	c.pool[ctx.param.Kind] = append(c.pool[ctx.param.Kind], ctx)
+	connType := conn.ConnectionType()
+	c.pool[connType] = append(c.pool[connType], conn)
 }
 
-func (c *ConnectionPool) Consume(event view.Event) {
+func (c *ConnectionPool) Transport(event view.Event) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	connArr := c.pool[event.Kind]
 	wg := sync.WaitGroup{}
 	wg.Add(len(connArr))
 	for _, conn := range connArr {
-		go func(conn *WatchCtx) {
+		go func(conn Connection) {
 			defer wg.Done()
-			view.ResponseOKWithInfo(conn.ctx, event)
+			_ = conn.Write(event)
 		}(conn)
 	}
 	wg.Wait()
 }
 
-func (c *ConnectionPool) Transport(event view.Event) {
-
-}
-
-func Register(ctx *gin.Context, param WatchParam) {
-	setChunkedConnection(ctx)
-	watchCtx := &WatchCtx{
-		ctx:   ctx,
-		param: param,
-	}
-	if pool == nil {
-		pool = &ConnectionPool{
-			pool: make(map[string][]*WatchCtx),
-		}
-	}
-	pool.Store(watchCtx)
+func Register(connection Connection) {
+	GetPool().Register(connection)
 	return
-}
-
-func setChunkedConnection(c *gin.Context) {
-	c.Request.Header.Set("Connection", "keep-alive")
-	c.Request.Header.Set("Transfer-Encoding", "chunked")
-	c.Request.Header.Set("Content-Type", "application/json")
 }

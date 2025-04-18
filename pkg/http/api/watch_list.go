@@ -4,24 +4,24 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/yxxchange/pipefree/pkg/bridge/pool"
+	"github.com/yxxchange/pipefree/pkg/http/internal"
 	"github.com/yxxchange/pipefree/pkg/http/utils"
-	"github.com/yxxchange/pipefree/pkg/view"
 	"strings"
 )
 
 func Watch(ctx *gin.Context) {
 	if !isKeepAlive(ctx) {
-		view.ResponseError(ctx, fmt.Errorf("must be a chunked keep-alive connection"))
+		utils.ResponseError(ctx, fmt.Errorf("must be a chunked keep-alive connection"))
 		return
 	}
-	var watchParam pool.WatchParam
+	var watchParam internal.WatchParam
 	err := utils.BindFlow(&watchParam, ctx.ShouldBindUri, ctx.ShouldBindQuery)
 	if err != nil {
-		view.ResponseError(ctx, err)
+		utils.ResponseError(ctx, err)
 		return
 	}
-	pool.Register(ctx, watchParam)
-	view.ResponseOK(ctx)
+	pool.Register(internal.Integrate(ctx, watchParam))
+	utils.ResponseOK(ctx)
 }
 
 func isKeepAlive(c *gin.Context) bool {

@@ -9,5 +9,5 @@ import (
 type Dispatcher struct{}
 
 func (d *Dispatcher) Dispatch(eventType view.EventType, node data.Node) {
-	pool.GetPool().Consume(WrapNodeToEvent(eventType, node))
+	pool.GetPool().Transport(WrapNodeToEvent(eventType, node))
 }
