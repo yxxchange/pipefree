@@ -3,7 +3,6 @@ package internal
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"sync"
 )
 
 type WatchServer struct {
@@ -22,19 +21,13 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.beginChunkedStream(w, f)
-
+	// todo: get event for watch kind node
 }
 
 type WatchParam struct {
 	Namespace string `uri:"namespace" binding:"required"`
 	Name      string `uri:"name" binding:"required"`
 	Kind      string `query:"kind" binding:"required"`
-}
-
-type WatchCtx struct {
-	mu    sync.Mutex
-	ctx   *gin.Context
-	param WatchParam
 }
 
 func (s *WatchServer) beginChunkedStream(w http.ResponseWriter, f http.Flusher) {
