@@ -2,11 +2,10 @@ package method
 
 import (
 	"github.com/yxxchange/pipefree/pkg/pipe/data"
-	"github.com/yxxchange/pipefree/pkg/view"
 )
 
-func WrapNodeToView(node data.Node) view.NodeView {
-	return view.NodeView{
+func WrapNodeToView(node data.Node) data.NodeView {
+	return data.NodeView{
 		ApiVersion: node.ApiVersion,
 		Kind:       node.Kind,
 		MetaData:   node.MetaData,
@@ -15,8 +14,8 @@ func WrapNodeToView(node data.Node) view.NodeView {
 	}
 }
 
-func WrapNodeToEvent(eventType view.EventType, node data.Node) view.Event {
-	return view.Event{
+func WrapNodeToEvent(eventType data.EventType, node data.Node) data.Event {
+	return data.Event{
 		EventType: eventType,
 		Kind:      node.Kind,
 		Node:      node,

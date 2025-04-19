@@ -1,6 +1,4 @@
-package view
-
-import "github.com/yxxchange/pipefree/pkg/pipe/data"
+package data
 
 type EventType string
 
@@ -13,13 +11,13 @@ const (
 type Event struct {
 	EventType EventType
 	Kind      string
-	data.Node
+	Node
 }
 
 type NodeView struct {
 	ApiVersion string `json:"apiVersion"`
 	Kind       string `json:"kind" yaml:"kind"`
-	data.MetaData
-	data.Spec
-	data.Status
+	MetaData
+	Spec
+	Status
 }

@@ -2,10 +2,28 @@ package internal
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/yxxchange/pipefree/pkg/bridge/pool"
-	"github.com/yxxchange/pipefree/pkg/http/utils"
+	"net/http"
 	"sync"
 )
+
+type WatchServer struct {
+	param                WatchParam
+	ExpectConnectionType string
+}
+
+func (s *WatchServer) Serve(c *gin.Context) {
+	s.ServeHTTP(c.Writer, c.Request)
+}
+
+func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	f, ok := w.(http.Flusher)
+	if !ok {
+		// TODO: log
+		return
+	}
+	s.beginChunkedStream(w, f)
+
+}
 
 type WatchParam struct {
 	Namespace string `uri:"namespace" binding:"required"`
@@ -19,29 +37,11 @@ type WatchCtx struct {
 	param WatchParam
 }
 
-func Integrate(ctx *gin.Context, param WatchParam) pool.Connection {
-	return &WatchCtx{
-		param: param,
-		ctx:   setChunkedConnection(ctx),
-	}
-}
+func (s *WatchServer) beginChunkedStream(w http.ResponseWriter, f http.Flusher) {
+	w.Header().Set("Content-Type", s.ExpectConnectionType)
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.WriteHeader(http.StatusOK)
+	f.Flush()
 
-var _ pool.Connection = &WatchCtx{}
-
-func (ctx *WatchCtx) Write(data interface{}) error {
-	ctx.mu.Lock()
-	defer ctx.mu.Unlock()
-	utils.ResponseOKWithInfo(ctx.ctx, data)
-	return nil
-}
-
-func (ctx *WatchCtx) ConnectionType() string {
-	return ctx.param.Kind
-}
-
-func setChunkedConnection(c *gin.Context) *gin.Context {
-	c.Request.Header.Set("Connection", "keep-alive")
-	c.Request.Header.Set("Transfer-Encoding", "chunked")
-	c.Request.Header.Set("Content-Type", "application/json")
-	return c
+	return
 }

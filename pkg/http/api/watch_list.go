@@ -3,7 +3,7 @@ package api
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/yxxchange/pipefree/pkg/bridge/pool"
+	"github.com/yxxchange/pipefree/pkg/bridge"
 	"github.com/yxxchange/pipefree/pkg/http/internal"
 	"github.com/yxxchange/pipefree/pkg/http/utils"
 	"strings"
@@ -20,7 +20,7 @@ func Watch(ctx *gin.Context) {
 		utils.ResponseError(ctx, err)
 		return
 	}
-	pool.Register(internal.Integrate(ctx, watchParam))
+	bridge.Register(internal.Integrate(ctx, watchParam))
 	utils.ResponseOK(ctx)
 }
 
