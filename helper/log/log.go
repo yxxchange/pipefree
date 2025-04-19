@@ -28,6 +28,14 @@ var DefaultCfg = zapcore.EncoderConfig{
 }
 
 var logger ILogger
+var _logger ILogger
+
+func init() {
+	if _logger != nil {
+		return
+	}
+	_defaultBuildFlow()
+}
 
 type ILogger interface {
 	Debug(msg string)
@@ -38,6 +46,31 @@ type ILogger interface {
 	Errorf(format string, args ...interface{})
 	Warn(msg string)
 	Warnf(format string, args ...interface{})
+}
+
+func Debug(msg string) {
+	_logger.Debug(msg)
+}
+func Debugf(format string, args ...interface{}) {
+	_logger.Debugf(format, args)
+}
+func Info(msg string) {
+	_logger.Info(msg)
+}
+func Infof(format string, args ...interface{}) {
+	_logger.Infof(format, args)
+}
+func Error(msg string) {
+	_logger.Error(msg)
+}
+func Errorf(format string, args ...interface{}) {
+	_logger.Errorf(format, args)
+}
+func Warn(msg string) {
+	_logger.Error(msg)
+}
+func Warnf(format string, args ...interface{}) {
+	_logger.Warnf(format, args)
 }
 
 type Log struct {
@@ -134,6 +167,19 @@ func (b *Builder) Build() {
 		cores = append(cores, zapcore.NewCore(b.enc, sync, b.level))
 	}
 	logger = wrap(zap.New(zapcore.NewTee(cores...), b.options...))
+	_logger = logger
+	return
+}
+
+func (b *Builder) build() {
+	if _logger != nil {
+		return
+	}
+	var cores []zapcore.Core
+	for _, sync := range b.syncs {
+		cores = append(cores, zapcore.NewCore(b.enc, sync, b.level))
+	}
+	_logger = wrap(zap.New(zapcore.NewTee(cores...), b.options...))
 	return
 }
 
@@ -142,11 +188,24 @@ func GetLoggerInstance() ILogger {
 }
 
 func QuickStart() {
-	NewBuilder().
+	defaultBuildFlow()
+}
+
+func defaultBuilder() *Builder {
+	return NewBuilder().
 		LogTo(os.Stdout).
 		LogWhen(zapcore.InfoLevel).
 		EncodeWith(DefaultCfg, JsonFormat).
 		EnableCaller().
-		StackTraceOn(zapcore.ErrorLevel).
-		Build()
+		StackTraceOn(zapcore.ErrorLevel)
+}
+
+func defaultBuildFlow() {
+	defaultBuilder().Build()
+}
+
+// _defaultBuildFlow 这个函数的意义时，当构建test单元时，可以快速使用日志器
+// 而不需要重新写一段初始化日志的流程
+func _defaultBuildFlow() {
+	defaultBuilder().build()
 }
