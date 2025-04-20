@@ -9,9 +9,7 @@ import (
 	"sync"
 )
 
-const (
-	OrcaCtxKey = "orca"
-)
+var orca *Orchestrator
 
 var (
 	ErrorNotSupport   = errors.New("not support")
@@ -19,25 +17,26 @@ var (
 )
 
 type Orchestrator struct {
-	ctx *OrcaCtx
+	ctx *Context
 	mu  sync.Mutex
 
-	Dispatcher
+	*dispatcher
 }
 
-var _ interfaces.Orchestrator[*OrcaCtx] = &Orchestrator{}
+var _ interfaces.Orchestrator[*Context] = &Orchestrator{}
 
 func NewOrchestrator(ctx context.Context) *Orchestrator {
 	return &Orchestrator{
-		ctx: &OrcaCtx{
+		ctx: &Context{
 			ctx:       ctx,
 			DAG:       make(map[string]*TopologyNode),
 			PhaseRepo: make(map[model.Phase]*PhaseNodes),
 		},
+		dispatcher: newDispatcher(),
 	}
 }
 
-type OrcaCtx struct {
+type Context struct {
 	Pipe      model.Node                  `json:"node"`
 	DAG       map[string]*TopologyNode    `json:"dag"`
 	PhaseRepo map[model.Phase]*PhaseNodes `json:"phaseRepo"`
@@ -50,12 +49,12 @@ type PhaseNodes struct {
 	Map   map[string]*model.Node
 }
 
-func (m *Orchestrator) Serialize(ctx *OrcaCtx) ([]byte, error) {
+func (m *Orchestrator) Serialize(ctx *Context) ([]byte, error) {
 	// Serialize the node to JSON
 	return json.Marshal(ctx.Pipe)
 }
 
-func (m *Orchestrator) Deserialize(b []byte) (*OrcaCtx, error) {
+func (m *Orchestrator) Deserialize(b []byte) (*Context, error) {
 	// Deserialize the JSON data to a Node
 	var node model.Node
 	err := json.Unmarshal(b, &node)
@@ -70,7 +69,11 @@ func (m *Orchestrator) Deserialize(b []byte) (*OrcaCtx, error) {
 	return m.ctx, nil
 }
 
-func (m *Orchestrator) init(ctx *OrcaCtx) error {
+func (m *Orchestrator) AddDispatcher(eg model.EngineGroup) *EventFlow {
+	return m.dispatcher.Register(eg)
+}
+
+func (m *Orchestrator) init(ctx *Context) error {
 	sorter, err := NewTopologySorter().ExtractGraph(ctx.Pipe.Graph).TopologySort()
 	if err != nil {
 		return err

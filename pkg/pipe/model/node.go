@@ -29,7 +29,9 @@ type MetaData struct {
 	successor   map[string]*MetaData
 }
 
-type ENK struct {
+// EngineGroup means that node can be processed by which engine
+// TODO: engine need to subscribe the pipe
+type EngineGroup struct {
 	Engine    string `json:"engine"`
 	Namespace string `json:"namespace"`
 	Kind      Kind   `json:"kind"`
