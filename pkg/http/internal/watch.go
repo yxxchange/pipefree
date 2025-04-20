@@ -1,8 +1,11 @@
 package internal
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/yxxchange/pipefree/helper/log"
+	"github.com/yxxchange/pipefree/pkg/pipe/model"
+	orca2 "github.com/yxxchange/pipefree/pkg/pipe/orca"
 	"net/http"
 )
 
@@ -28,14 +31,39 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.beginChunkedStream(w, f)
-	// todo: get event for watch kind node
 	log.Info("start to watch")
+	eg := model.EngineGroup{
+		Engine:    s.param.Engine,
+		Namespace: s.param.Namespace,
+		Kind:      s.param.Kind,
+	}
+	done := r.Context().Done()
+	ch := orca2.NewOrchestrator(context.Background()).Register(eg).Channel()
+	for {
+		select {
+		case b, ok := <-ch:
+			if !ok {
+				return
+			}
+			_, err := w.Write(b)
+			if err != nil {
+				log.Errorf("write data error in watching, disconnected")
+				return
+			}
+			if len(ch) == 0 {
+				f.Flush()
+			}
+		case <-done:
+			return
+		}
+	}
 }
 
 type WatchParam struct {
-	Namespace string `uri:"namespace" binding:"required"`
-	Name      string `uri:"name" binding:"required"`
-	Kind      string `query:"kind" binding:"required"`
+	Namespace string     `uri:"namespace" binding:"required"`
+	Name      string     `uri:"name" binding:"required"`
+	Kind      model.Kind `query:"kind" binding:"required"`
+	Engine    string     `query:"engine" binding:"required"`
 }
 
 func (s *WatchServer) beginChunkedStream(w http.ResponseWriter, f http.Flusher) {

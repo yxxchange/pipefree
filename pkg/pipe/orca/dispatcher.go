@@ -2,35 +2,75 @@ package orca
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/yxxchange/pipefree/helper/log"
 	"github.com/yxxchange/pipefree/helper/safe"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"sync"
+	"time"
 )
 
 type EventFlow struct {
-	ch *safe.Channel[model.Event]
+	bch chan []byte
+	sch *safe.Channel[model.Event]
 }
 
 func NewEventFlow(ch *safe.Channel[model.Event]) *EventFlow {
-	return &EventFlow{ch: ch}
+	return &EventFlow{
+		sch: ch,
+		bch: make(chan []byte, 1000),
+	}
+}
+
+func (e *EventFlow) Channel() chan []byte {
+	safe.Go(func() {
+		defer func() {
+			if e.bch != nil {
+				close(e.bch)
+			}
+		}()
+		for {
+			select {
+			case event, ok := <-e.sch.Chan():
+				if !ok {
+					return
+				}
+				b, err := e.Serialize(event)
+				if err != nil {
+					log.Errorf("serialize event error: err: %v", err)
+				}
+				e.bch <- b
+			}
+		}
+	})
+	return e.bch
+}
+
+func (e *EventFlow) Serialize(event model.Event) ([]byte, error) {
+	return json.Marshal(event)
 }
 
 func (e *EventFlow) dispatch(event model.Event) {
-	e.ch.Send(event)
+	e.sch.Send(event)
 }
 
 type dispatcher struct {
 	mu  sync.RWMutex
 	dst map[model.EngineGroup][]*EventFlow
 
-	qSize int
+	qSize   int
+	timeout time.Duration
+	ctx     context.Context
 }
 
-func newDispatcher() *dispatcher {
+func newDispatcher(ctx context.Context) *dispatcher {
 	return &dispatcher{
-		dst:   make(map[model.EngineGroup][]*EventFlow),
-		qSize: 1000,
+		dst: make(map[model.EngineGroup][]*EventFlow),
+
+		qSize:   1000,
+		timeout: time.Second * 3,
+		ctx:     ctx,
 	}
 }
 
