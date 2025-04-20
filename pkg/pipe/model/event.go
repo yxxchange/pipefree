@@ -1,4 +1,4 @@
-package data
+package model
 
 type EventType string
 
@@ -10,14 +10,13 @@ const (
 
 type Event struct {
 	EventType EventType
-	Kind      string
 	Node
 }
 
 type NodeView struct {
 	ApiVersion string `json:"apiVersion"`
-	Kind       string `json:"kind" yaml:"kind"`
-	MetaData
-	Spec
-	Status
+	Kind       `json:"kind" yaml:"kind"`
+	MetaData   `json:"metaData" yaml:"metaData"`
+	Spec       `json:"spec" yaml:"spec"`
+	Status     `json:"status" yaml:"status"`
 }

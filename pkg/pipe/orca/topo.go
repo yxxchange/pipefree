@@ -1,10 +1,10 @@
-package method
+package orca
 
 import (
 	"container/heap"
 	"errors"
 	"github.com/yxxchange/pipefree/pkg/interfaces"
-	"github.com/yxxchange/pipefree/pkg/pipe/data"
+	"github.com/yxxchange/pipefree/pkg/pipe/model"
 )
 
 type TopologyNodes []*TopologyNode
@@ -104,7 +104,7 @@ func (t *TopologySorter) TopologySort() (*TopologySorter, error) {
 	return t, nil
 }
 
-func (t *TopologySorter) ExtractGraph(graph data.Graph) *TopologySorter {
+func (t *TopologySorter) ExtractGraph(graph model.Graph) *TopologySorter {
 	nodesMap := make(map[string]*TopologyNode)
 	for _, node := range graph.Nodes {
 		nodesMap[node.Name] = &TopologyNode{
@@ -147,8 +147,8 @@ func (t *TopologySorter) store(node *TopologyNode) {
 
 type TopologyNode struct {
 	// Node is the node of the orca
-	Node     *data.Node `json:"node"`
-	InDegree int        `json:"inDegree"`
+	Node     *model.Node `json:"node"`
+	InDegree int         `json:"inDegree"`
 }
 
 var _ interfaces.CompareUnit[TopologyNode] = TopologyNode{}

@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/yxxchange/pipefree/pkg/bridge"
 	"github.com/yxxchange/pipefree/pkg/http/internal"
 	"github.com/yxxchange/pipefree/pkg/http/utils"
 	"strings"
@@ -20,8 +19,7 @@ func Watch(ctx *gin.Context) {
 		utils.ResponseError(ctx, err)
 		return
 	}
-	bridge.Register(internal.Integrate(ctx, watchParam))
-	utils.ResponseOK(ctx)
+	internal.LaunchServer(ctx, watchParam)
 }
 
 func isKeepAlive(c *gin.Context) bool {

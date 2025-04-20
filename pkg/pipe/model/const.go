@@ -1,7 +1,7 @@
-package data
+package model
 
 type Phase string
-type NodeType string
+type Kind string
 
 const (
 	PhaseReady          Phase = "ready"      // the ready phase of the node means the pipe is ready to run
@@ -11,6 +11,6 @@ const (
 	PhasePipeTerminated Phase = "terminated" // the terminated phase of the node means the pipe is terminated by the user
 	PhasePipePaused     Phase = "paused"     // the paused phase of the node means the pipe is paused by the user
 
-	NodeTypeScalar   NodeType = "scalar"   // the scalar node type means the node not contains any sub nodes
-	NodeTypeCompound NodeType = "compound" // the compound node type means the node contains some sub nodes
+	NodeTypeScalar   Kind = "scalar"   // the scalar node type means the node not contains any sub nodes
+	NodeTypeCompound Kind = "compound" // the compound node type means the node contains some sub nodes
 )

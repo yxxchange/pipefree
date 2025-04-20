@@ -1,11 +1,11 @@
-package method
+package orca
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"github.com/yxxchange/pipefree/pkg/interfaces"
-	"github.com/yxxchange/pipefree/pkg/pipe/data"
+	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"sync"
 )
 
@@ -32,22 +32,22 @@ func NewOrchestrator(ctx context.Context) *Orchestrator {
 		ctx: &OrcaCtx{
 			ctx:       ctx,
 			DAG:       make(map[string]*TopologyNode),
-			PhaseRepo: make(map[data.Phase]*PhaseNodes),
+			PhaseRepo: make(map[model.Phase]*PhaseNodes),
 		},
 	}
 }
 
 type OrcaCtx struct {
-	Pipe      data.Node                  `json:"node"`
-	DAG       map[string]*TopologyNode   `json:"dag"`
-	PhaseRepo map[data.Phase]*PhaseNodes `json:"phaseRepo"`
+	Pipe      model.Node                  `json:"node"`
+	DAG       map[string]*TopologyNode    `json:"dag"`
+	PhaseRepo map[model.Phase]*PhaseNodes `json:"phaseRepo"`
 
 	ctx context.Context
 }
 
 type PhaseNodes struct {
-	Phase data.Phase
-	Map   map[string]*data.Node
+	Phase model.Phase
+	Map   map[string]*model.Node
 }
 
 func (m *Orchestrator) Serialize(ctx *OrcaCtx) ([]byte, error) {
@@ -57,7 +57,7 @@ func (m *Orchestrator) Serialize(ctx *OrcaCtx) ([]byte, error) {
 
 func (m *Orchestrator) Deserialize(b []byte) (*OrcaCtx, error) {
 	// Deserialize the JSON data to a Node
-	var node data.Node
+	var node model.Node
 	err := json.Unmarshal(b, &node)
 	if err != nil {
 		return nil, err
@@ -78,14 +78,14 @@ func (m *Orchestrator) init(ctx *OrcaCtx) error {
 	ctx.DAG = sorter.Map
 	readyNodes := sorter.GetZeroNode()
 	m.ctx = ctx
-	ctx.PhaseRepo[data.PhaseReady] = initPhaseRepo(readyNodes)
+	ctx.PhaseRepo[model.PhaseReady] = initPhaseRepo(readyNodes)
 	return nil
 }
 
 func initPhaseRepo(readyNodes TopologyNodes) *PhaseNodes {
 	phaseNodes := PhaseNodes{
-		Phase: data.PhaseReady,
-		Map:   make(map[string]*data.Node),
+		Phase: model.PhaseReady,
+		Map:   make(map[string]*model.Node),
 	}
 	for _, node := range readyNodes {
 		phaseNodes.Map[node.Node.Name] = node.Node
@@ -109,26 +109,26 @@ func (m *Orchestrator) Trigger(target string, action interfaces.Action) error {
 }
 
 func (m *Orchestrator) readyToRunning(target string) error {
-	readyNodes := m.getPhaseNodes(data.PhaseReady)
-	runningNodes := m.getPhaseNodes(data.PhaseRunning)
+	readyNodes := m.getPhaseNodes(model.PhaseReady)
+	runningNodes := m.getPhaseNodes(model.PhaseRunning)
 	node, has := readyNodes.search(target)
 	if !has {
 		return ErrorNodeNotReady
 	}
 	readyNodes.remove(target)
-	node.Status.Phase = data.PhaseRunning
+	node.Status.Phase = model.PhaseRunning
 	runningNodes.add(target, node)
 	return nil
 }
 
-func (m *Orchestrator) getPhaseNodes(phase data.Phase) *PhaseNodes {
+func (m *Orchestrator) getPhaseNodes(phase model.Phase) *PhaseNodes {
 	if m.ctx.PhaseRepo == nil {
-		m.ctx.PhaseRepo = make(map[data.Phase]*PhaseNodes)
+		m.ctx.PhaseRepo = make(map[model.Phase]*PhaseNodes)
 	}
 	return m.ctx.PhaseRepo[phase]
 }
 
-func (pn *PhaseNodes) search(name string) (*data.Node, bool) {
+func (pn *PhaseNodes) search(name string) (*model.Node, bool) {
 	if len(pn.Map) == 0 {
 		return nil, false
 	}
@@ -139,16 +139,16 @@ func (pn *PhaseNodes) search(name string) (*data.Node, bool) {
 	return node, true
 }
 
-func (pn *PhaseNodes) add(name string, node *data.Node) {
+func (pn *PhaseNodes) add(name string, node *model.Node) {
 	if pn.Map == nil {
-		pn.Map = make(map[string]*data.Node)
+		pn.Map = make(map[string]*model.Node)
 	}
 	pn.Map[name] = node
 }
 
 func (pn *PhaseNodes) remove(name string) {
 	if pn.Map == nil {
-		pn.Map = make(map[string]*data.Node)
+		pn.Map = make(map[string]*model.Node)
 		return
 	}
 	delete(pn.Map, name)

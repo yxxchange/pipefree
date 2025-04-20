@@ -1,8 +1,9 @@
-package data
+package model
 
 type Node struct {
 	ApiVersion string `json:"apiVersion" yaml:"apiVersion"` // the api version of the node
-	Kind       string `json:"kind" yaml:"kind"`             // the kind of the node
+	Kind       Kind   `json:"kind" yaml:"kind"`             // the kind of the node
+	Engine     string `json:"engine" yaml:"engine"`
 	MetaData   `json:"metadata" yaml:"metadata"`
 	Spec       `json:"spec" yaml:"spec"`
 	Status     `json:"status" yaml:"status"`
@@ -13,10 +14,9 @@ type Node struct {
 
 type MetaData struct {
 	// Static config
-	Name      string   `json:"name" yaml:"name"`
-	Namespace string   `json:"namespace" yaml:"namespace"`
-	Type      NodeType `json:"type" yaml:"type"`
-	Desc      string   `json:"desc" yaml:"desc"`
+	Name      string `json:"name" yaml:"name"`
+	Namespace string `json:"namespace" yaml:"namespace"`
+	Desc      string `json:"desc" yaml:"desc"`
 
 	// Dynamic config
 	RuntimeUUID     string `json:"runtime_uuid" yaml:"runtime_uuid"` // the instance id of the pipe exec snapshot
@@ -27,6 +27,12 @@ type MetaData struct {
 	ancestor    *MetaData
 	predecessor map[string]*MetaData
 	successor   map[string]*MetaData
+}
+
+type ENK struct {
+	Engine    string `json:"engine"`
+	Namespace string `json:"namespace"`
+	Kind      Kind   `json:"kind"`
 }
 
 func (m *MetaData) GetPredecessor() map[string]*MetaData {
