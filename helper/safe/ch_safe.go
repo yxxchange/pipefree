@@ -6,6 +6,7 @@ import (
 
 type Channel[T interface{}] struct {
 	ch     chan T
+	rw     sync.RWMutex
 	mu     sync.Mutex
 	closed bool
 }
@@ -29,8 +30,8 @@ func (c *Channel[T]) Range(fn func(T) bool) {
 }
 
 func (c *Channel[T]) Send(data T) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.rw.RLock()
+	defer c.rw.RUnlock()
 	if c.closed {
 		return
 	}
@@ -38,8 +39,8 @@ func (c *Channel[T]) Send(data T) {
 }
 
 func (c *Channel[T]) Close() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.rw.Lock()
+	defer c.rw.Unlock()
 	if c.closed {
 		return
 	}
