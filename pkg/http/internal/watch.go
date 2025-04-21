@@ -5,23 +5,25 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/yxxchange/pipefree/helper/log"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
-	orca2 "github.com/yxxchange/pipefree/pkg/pipe/orca"
+	"github.com/yxxchange/pipefree/pkg/pipe/orca"
 	"net/http"
 )
 
 type WatchServer struct {
+	ctx   *gin.Context
 	param WatchParam
 }
 
 func LaunchServer(c *gin.Context, param WatchParam) {
 	server := &WatchServer{
 		param: param,
+		ctx:   c,
 	}
-	server.Serve(c)
+	server.Serve()
 }
 
-func (s *WatchServer) Serve(c *gin.Context) {
-	s.ServeHTTP(c.Writer, c.Request)
+func (s *WatchServer) Serve() {
+	s.ServeHTTP(s.ctx.Writer, s.c.Request)
 }
 
 func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +40,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Kind:      s.param.Kind,
 	}
 	done := r.Context().Done()
-	ch := orca2.NewOrchestrator(context.Background()).Register(eg).Channel()
+	ch := orca.GetOrchestrator(context.Background()).Register(eg).Channel()
 	for {
 		select {
 		case b, ok := <-ch:

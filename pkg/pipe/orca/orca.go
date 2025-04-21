@@ -26,7 +26,7 @@ type Orchestrator struct {
 
 var _ interfaces.Orchestrator[*OrcaContext] = &Orchestrator{}
 
-func NewOrchestrator(ctx context.Context) *Orchestrator {
+func GetOrchestrator(ctx context.Context) *Orchestrator {
 	once.Do(func() {
 		orca = &Orchestrator{
 			ctx: &OrcaContext{
