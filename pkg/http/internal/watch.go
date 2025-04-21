@@ -23,7 +23,7 @@ func LaunchServer(c *gin.Context, param WatchParam) {
 }
 
 func (s *WatchServer) Serve() {
-	s.ServeHTTP(s.ctx.Writer, s.c.Request)
+	s.ServeHTTP(s.ctx.Writer, s.ctx.Request)
 }
 
 func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
