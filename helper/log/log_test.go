@@ -5,7 +5,6 @@ import (
 )
 
 func TestLog(t *testing.T) {
-	QuickStart()
-	logger.Info("test a log")
-	logger.Error("test a log")
+	Info("test a log")
+	Error("test a log")
 }

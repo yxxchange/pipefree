@@ -31,10 +31,7 @@ var logger ILogger
 var _logger ILogger
 
 func init() {
-	if _logger != nil {
-		return
-	}
-	_defaultBuildFlow()
+	builtinLog()
 }
 
 type ILogger interface {
@@ -187,10 +184,6 @@ func GetLoggerInstance() ILogger {
 	return logger
 }
 
-func QuickStart() {
-	defaultBuildFlow()
-}
-
 func defaultBuilder() *Builder {
 	return NewBuilder().
 		LogTo(os.Stdout).
@@ -200,12 +193,12 @@ func defaultBuilder() *Builder {
 		StackTraceOn(zapcore.ErrorLevel)
 }
 
-func defaultBuildFlow() {
-	defaultBuilder().Build()
+// builtinLog 这个函数的意义时，当构建test单元时，可以快速使用日志器
+// 而不需要重新写一段初始化日志的流程
+func builtinLog() {
+	defaultBuilder().build()
 }
 
-// _defaultBuildFlow 这个函数的意义时，当构建test单元时，可以快速使用日志器
-// 而不需要重新写一段初始化日志的流程
-func _defaultBuildFlow() {
-	defaultBuilder().build()
+func AsZapLoggerPlugin() *zap.Logger {
+	return _logger.(*Log).logger
 }
