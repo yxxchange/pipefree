@@ -33,5 +33,5 @@ etcd:
     jitter: 0.3 # float
 
 orca:
-  dispatcher:
+  watcher:
     queueSize: 1000

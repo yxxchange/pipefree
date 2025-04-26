@@ -20,7 +20,7 @@ type EventFlow struct {
 func NewEventFlow(ch *safe.Channel[*clientv3.WatchResponse]) *EventFlow {
 	return &EventFlow{
 		eventCh: ch,
-		bytesCh: safe.NewSafeChannel[[]byte](viper.GetInt("orca.dispatcher.queueSize")),
+		bytesCh: safe.NewSafeChannel[[]byte](viper.GetInt("orca.watcher.queueSize")),
 	}
 }
 
@@ -65,18 +65,18 @@ func (e *EventFlow) transform(resp *clientv3.WatchResponse) (interrupted bool) {
 	return
 }
 
-type dispatcher struct {
+type watcher struct {
 	ctx context.Context
 }
 
-func newDispatcher(ctx context.Context) *dispatcher {
-	return &dispatcher{
+func newWatcher(ctx context.Context) *watcher {
+	return &watcher{
 		ctx: ctx,
 	}
 }
 
-func (d *dispatcher) Register(idf model.NodeIdentifier) *EventFlow {
-	ch := safe.NewSafeChannel[*clientv3.WatchResponse](viper.GetInt("orca.dispatcher.queueSize"))
+func (w *watcher) Register(idf model.NodeIdentifier) *EventFlow {
+	ch := safe.NewSafeChannel[*clientv3.WatchResponse](viper.GetInt("orca.watcher.queueSize"))
 	ef := NewEventFlow(ch)
 	safe.Go(func() {
 		for resp := range etcd.Watch(context.Background(), idf.Identifier()) {
@@ -87,6 +87,6 @@ func (d *dispatcher) Register(idf model.NodeIdentifier) *EventFlow {
 	return ef
 }
 
-func (d *dispatcher) Dispatch(ctx context.Context, key, value string) error {
+func (w *watcher) Dispatch(ctx context.Context, key, value string) error {
 	return etcd.Put(ctx, key, value)
 }

@@ -21,7 +21,7 @@ type Orchestrator struct {
 	ctx *OrcaContext
 	mu  sync.Mutex
 
-	*dispatcher
+	*watcher
 }
 
 var _ interfaces.Orchestrator[*OrcaContext] = &Orchestrator{}
@@ -34,7 +34,7 @@ func GetOrchestrator(ctx context.Context) *Orchestrator {
 				DAG:       make(map[string]*TopologyNode),
 				PhaseRepo: make(map[model.Phase]*PhaseNodes),
 			},
-			dispatcher: newDispatcher(ctx),
+			watcher: newWatcher(ctx),
 		}
 	})
 	return orca
@@ -74,7 +74,7 @@ func (m *Orchestrator) Deserialize(b []byte) (*OrcaContext, error) {
 }
 
 func (m *Orchestrator) AddDispatcher(eg model.NodeIdentifier) *EventFlow {
-	return m.dispatcher.Register(eg)
+	return m.watcher.Register(eg)
 }
 
 func (m *Orchestrator) init(ctx *OrcaContext) error {
