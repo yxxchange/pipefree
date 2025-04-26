@@ -21,7 +21,8 @@ var etcd *clientv3.Client
 var once sync.Once
 
 func LaunchEtcdClient() {
-	err := NewLauncher().SetEndpoint(viper.GetStringSlice("etcd.endpoints")).
+	err := NewLauncher().
+		SetEndpoint(viper.GetStringSlice("etcd.endpoints")).
 		RegisterLogger(log.AsZapLoggerPlugin()).
 		KeepAlivePeriod(viper.GetDuration("etcd.time.keepAlivePeriod")*time.Second).
 		DialTimeout(viper.GetDuration("etcd.time.dialTimeout")*time.Second).
