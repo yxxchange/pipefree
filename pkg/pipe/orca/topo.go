@@ -3,7 +3,6 @@ package orca
 import (
 	"container/heap"
 	"errors"
-	"github.com/yxxchange/pipefree/pkg/interfaces"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 )
 
@@ -19,7 +18,7 @@ func (t TopologyNodes) Len() int {
 }
 
 func (t TopologyNodes) Less(i, j int) bool {
-	return t[i].Less(t[j])
+	return t[i].InDegree < t[j].InDegree
 }
 
 func (t TopologyNodes) Swap(i, j int) {
@@ -151,23 +150,9 @@ type TopologyNode struct {
 	InDegree int         `json:"inDegree"`
 }
 
-var _ interfaces.CompareUnit[TopologyNode] = TopologyNode{}
-
 func (tn TopologyNode) DeepCopy() *TopologyNode {
 	return &TopologyNode{
 		Node:     tn.Node,
 		InDegree: tn.InDegree,
 	}
-}
-
-func (tn TopologyNode) Value() TopologyNode {
-	return tn
-}
-
-func (tn TopologyNode) Less(other interfaces.CompareUnit[TopologyNode]) bool {
-	return tn.InDegree < other.Value().InDegree
-}
-
-func (tn TopologyNode) Equal(_ interfaces.CompareUnit[TopologyNode]) bool {
-	return false
 }

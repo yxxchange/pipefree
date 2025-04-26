@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/yxxchange/pipefree/pkg/interfaces"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"sync"
 )
@@ -23,8 +22,6 @@ type Orchestrator struct {
 
 	*watcher
 }
-
-var _ interfaces.Orchestrator[*OrcaContext] = &Orchestrator{}
 
 func GetOrchestrator(ctx context.Context) *Orchestrator {
 	once.Do(func() {
@@ -98,21 +95,6 @@ func initPhaseRepo(readyNodes TopologyNodes) *PhaseNodes {
 		phaseNodes.Map[node.Node.Name] = node.Node
 	}
 	return &phaseNodes
-}
-
-func (m *Orchestrator) Trigger(target string, action interfaces.Action) error {
-	switch action {
-	case interfaces.ActionStart:
-		err := m.readyToRunning(target)
-		if err != nil {
-			return err
-		}
-		// TODO: dispatch to engine
-		return nil
-
-	default:
-		return ErrorNotSupport
-	}
 }
 
 func (m *Orchestrator) readyToRunning(target string) error {
