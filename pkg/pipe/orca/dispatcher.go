@@ -3,111 +3,90 @@ package orca
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"github.com/spf13/viper"
 	"github.com/yxxchange/pipefree/helper/log"
 	"github.com/yxxchange/pipefree/helper/safe"
+	"github.com/yxxchange/pipefree/pkg/infra/etcd"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
-	"sync"
-	"time"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 type EventFlow struct {
-	bch chan []byte
-	sch *safe.Channel[model.Event]
+	bytesCh *safe.Channel[[]byte]
+	eventCh *safe.Channel[*clientv3.WatchResponse]
 }
 
-func NewEventFlow(ch *safe.Channel[model.Event]) *EventFlow {
+func NewEventFlow(ch *safe.Channel[*clientv3.WatchResponse]) *EventFlow {
 	return &EventFlow{
-		sch: ch,
-		bch: make(chan []byte, 1000),
+		eventCh: ch,
+		bytesCh: safe.NewSafeChannel[[]byte](viper.GetInt("orca.dispatcher.queueSize")),
 	}
 }
 
-func (e *EventFlow) Channel() chan []byte {
+func (e *EventFlow) Channel() *safe.Channel[[]byte] {
 	safe.Go(func() {
-		defer func() {
-			if e.bch != nil {
-				close(e.bch)
-			}
-		}()
-		for {
-			select {
-			case event, ok := <-e.sch.Chan():
-				if !ok {
-					return
-				}
-				b, err := e.Serialize(event)
-				if err != nil {
-					log.Errorf("serialize event error: err: %v", err)
-				}
-				e.bch <- b
+		defer e.bytesCh.Close()
+		e.eventCh.Range(e.transform)
+	})
+	return e.bytesCh
+}
+
+func (e *EventFlow) Serialize(resp *clientv3.WatchResponse) ([]byte, error) {
+	return json.Marshal(resp)
+}
+
+func (e *EventFlow) transform(resp *clientv3.WatchResponse) (interrupted bool) {
+	if resp == nil {
+		return
+	}
+
+	for _, etcdEvent := range resp.Events {
+		var event model.Event
+		switch etcdEvent.Type {
+		case mvccpb.DELETE:
+			event.EventType = model.EventTypeDelete
+		default:
+			if etcdEvent.Kv.CreateRevision == etcdEvent.Kv.ModRevision {
+				event.EventType = model.EventTypeCreate
+			} else {
+				event.EventType = model.EventTypeUpdate
 			}
 		}
-	})
-	return e.bch
-}
+		event.Data = etcdEvent.Kv.Value
+		b, err := e.Serialize(resp)
+		if err != nil {
+			log.Errorf("serialize event error: err: %v", err)
+			continue
+		}
+		e.bytesCh.Send(b)
+	}
 
-func (e *EventFlow) Serialize(event model.Event) ([]byte, error) {
-	return json.Marshal(event)
-}
-
-func (e *EventFlow) dispatch(event model.Event) {
-	e.sch.Send(event)
+	return
 }
 
 type dispatcher struct {
-	mu  sync.RWMutex
-	dst map[model.EngineGroup][]*EventFlow
-
-	qSize   int
-	timeout time.Duration
-	ctx     context.Context
+	ctx context.Context
 }
 
 func newDispatcher(ctx context.Context) *dispatcher {
 	return &dispatcher{
-		dst: make(map[model.EngineGroup][]*EventFlow),
-
-		qSize:   1000,
-		timeout: time.Second * 3,
-		ctx:     ctx,
+		ctx: ctx,
 	}
 }
 
-func (d *dispatcher) Register(eg model.EngineGroup) *EventFlow {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	ch := safe.NewSafeChannel[model.Event](d.qSize)
+func (d *dispatcher) Register(idf model.NodeIdentifier) *EventFlow {
+	ch := safe.NewSafeChannel[*clientv3.WatchResponse](viper.GetInt("orca.dispatcher.queueSize"))
 	ef := NewEventFlow(ch)
-	d.dst[eg] = append(d.dst[eg], ef)
+	safe.Go(func() {
+		for resp := range etcd.Watch(context.Background(), idf.Identifier()) {
+			ch.Send(&resp)
+		}
+		log.Info("etch watch closed")
+	})
 	return ef
 }
 
-func (d *dispatcher) Dispatch(ctx context.Context, eventType model.EventType, node model.Node) error {
-	done := make(chan struct{}, 1)
-	safe.Go(func() {
-		d.dispatch(eventType, node, done)
-	})
-	select {
-	case <-done:
-		return nil
-	case <-ctx.Done():
-		return fmt.Errorf("dispatch timeout")
-	}
-}
-
-func (d *dispatcher) dispatch(eventType model.EventType, node model.Node, done chan struct{}) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	event := wrapNodeToEvent(eventType, node)
-	eg := convertNodeToEG(node)
-	channels := d.findChannel(eg)
-	for i := 0; i < len(channels); i++ {
-		channels[i].dispatch(event)
-	}
-	done <- struct{}{}
-}
-
-func (d *dispatcher) findChannel(eg model.EngineGroup) []*EventFlow {
-	return d.dst[eg]
+func (d *dispatcher) Dispatch(ctx context.Context, key, value string) error {
+	return etcd.Put(ctx, key, value)
 }

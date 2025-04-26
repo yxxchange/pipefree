@@ -14,17 +14,11 @@ func WrapNodeToView(node model.Node) model.NodeView {
 	}
 }
 
-func wrapNodeToEvent(eventType model.EventType, node model.Node) model.Event {
-	return model.Event{
-		EventType: eventType,
-		Node:      node,
-	}
-}
-
-func convertNodeToEG(node model.Node) model.EngineGroup {
-	return model.EngineGroup{
-		Engine:    node.Engine,
-		Namespace: node.Namespace,
-		Kind:      node.Kind,
+func ConvertNodeToIdentifier(node model.Node) model.NodeIdentifier {
+	return model.NodeIdentifier{
+		ApiVersion: node.ApiVersion,
+		Namespace:  node.Namespace,
+		Kind:       node.Kind,
+		Operation:  node.Operation,
 	}
 }

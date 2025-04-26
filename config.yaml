@@ -31,3 +31,7 @@ etcd:
     maxSize: 5
     interval: 30 # second
     jitter: 0.3 # float
+
+orca:
+  dispatcher:
+    queueSize: 1000

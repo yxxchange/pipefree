@@ -73,7 +73,7 @@ func (m *Orchestrator) Deserialize(b []byte) (*OrcaContext, error) {
 	return m.ctx, nil
 }
 
-func (m *Orchestrator) AddDispatcher(eg model.EngineGroup) *EventFlow {
+func (m *Orchestrator) AddDispatcher(eg model.NodeIdentifier) *EventFlow {
 	return m.dispatcher.Register(eg)
 }
 

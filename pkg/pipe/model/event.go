@@ -10,7 +10,7 @@ const (
 
 type Event struct {
 	EventType EventType
-	Node
+	Data      []byte
 }
 
 type NodeView struct {

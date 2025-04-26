@@ -1,21 +1,24 @@
 package model
 
+import "fmt"
+
 type Node struct {
-	ApiVersion string `json:"apiVersion" yaml:"apiVersion"` // the api version of the node
-	Kind       Kind   `json:"kind" yaml:"kind"`             // the kind of the node
-	Engine     string `json:"engine" yaml:"engine"`
+	ApiVersion string `json:"apiVersion" yaml:"apiVersion"`
+	Kind       Kind   `json:"kind" yaml:"kind"`
 	MetaData   `json:"metadata" yaml:"metadata"`
 	Spec       `json:"spec" yaml:"spec"`
 	Status     `json:"status" yaml:"status"`
 
 	// attributes only for compound node
 	Graph `json:"graph,omitempty" yaml:"graph,omitempty"` // the graph of the node
+	Env   Environment                                     `json:"env" yaml:"env"`
 }
 
 type MetaData struct {
 	// Static config
 	Name      string `json:"name" yaml:"name"`
 	Namespace string `json:"namespace" yaml:"namespace"`
+	Operation string `json:"operation" yaml:"operation"`
 	Desc      string `json:"desc" yaml:"desc"`
 
 	// Dynamic config
@@ -29,12 +32,18 @@ type MetaData struct {
 	successor   map[string]*MetaData
 }
 
-// EngineGroup means that node can be processed by which engine
+// NodeIdentifier means that node can be processed by which engine
 // TODO: engine need to subscribe the pipe
-type EngineGroup struct {
-	Engine    string `json:"engine"`
-	Namespace string `json:"namespace"`
-	Kind      Kind   `json:"kind"`
+type NodeIdentifier struct {
+	ApiVersion string `json:"apiVersion"`
+	Namespace  string `json:"namespace"`
+	Kind       Kind   `json:"kind"`
+	Operation  string `json:"operation"`
+}
+
+func (n NodeIdentifier) Identifier() string {
+	// apiVersion/namespace/kind/operation
+	return fmt.Sprintf("/%s/%s/%s/%s", n.ApiVersion, n.Namespace, n.Kind, n.Operation)
 }
 
 func (m *MetaData) GetPredecessor() map[string]*MetaData {
@@ -102,4 +111,8 @@ type Graph struct {
 type Edge struct {
 	From string `json:"from" yaml:"from"`
 	To   string `json:"to" yaml:"to"`
+}
+
+type Environment struct {
+	KeyValues map[string]interface{}
 }

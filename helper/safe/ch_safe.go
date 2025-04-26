@@ -21,9 +21,9 @@ func (c *Channel[T]) Chan() <-chan T {
 	return c.ch
 }
 
-func (c *Channel[T]) Range(fn func(T) bool) {
+func (c *Channel[T]) Range(fn func(T) (interrupted bool)) {
 	for data := range c.ch {
-		if !fn(data) {
+		if fn(data) {
 			return
 		}
 	}

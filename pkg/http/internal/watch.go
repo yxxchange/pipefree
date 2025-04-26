@@ -34,16 +34,17 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	s.beginChunkedStream(w, f)
 	log.Info("start to watch")
-	eg := model.EngineGroup{
-		Engine:    s.param.Engine,
-		Namespace: s.param.Namespace,
-		Kind:      s.param.Kind,
+	idf := model.NodeIdentifier{
+		ApiVersion: s.param.ApiVersion,
+		Namespace:  s.param.Namespace,
+		Kind:       s.param.Kind,
+		Operation:  s.param.Operation,
 	}
 	done := r.Context().Done()
-	ch := orca.GetOrchestrator(context.Background()).Register(eg).Channel()
+	ch := orca.GetOrchestrator(context.Background()).Register(idf).Channel()
 	for {
 		select {
-		case b, ok := <-ch:
+		case b, ok := <-ch.Chan():
 			if !ok {
 				return
 			}
@@ -52,7 +53,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				log.Errorf("write data error in watching, disconnected")
 				return
 			}
-			if len(ch) == 0 {
+			if len(ch.Chan()) == 0 {
 				f.Flush()
 			}
 		case <-done:
@@ -62,10 +63,11 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type WatchParam struct {
-	Namespace string     `uri:"namespace" binding:"required"`
-	Name      string     `uri:"name" binding:"required"`
-	Kind      model.Kind `query:"kind" binding:"required"`
-	Engine    string     `query:"engine" binding:"required"`
+	ApiVersion string     `uri:"apiVersion"`
+	Namespace  string     `uri:"namespace"`
+	Name       string     `uri:"name"`
+	Kind       model.Kind `query:"kind"`
+	Operation  string     `query:"operation"`
 }
 
 func (s *WatchServer) beginChunkedStream(w http.ResponseWriter, f http.Flusher) {

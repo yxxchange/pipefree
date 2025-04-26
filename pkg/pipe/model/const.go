@@ -11,6 +11,6 @@ const (
 	PhasePipeTerminated Phase = "terminated" // the terminated phase of the node means the pipe is terminated by the user
 	PhasePipePaused     Phase = "paused"     // the paused phase of the node means the pipe is paused by the user
 
-	NodeTypeScalar   Kind = "scalar"   // the scalar node type means the node not contains any sub nodes
-	NodeTypeCompound Kind = "compound" // the compound node type means the node contains some sub nodes
+	NodeKindScalar   Kind = "scalar"   // the scalar node kind means the node not contains any sub nodes
+	NodeKindCompound Kind = "compound" // the compound node kind means the node contains some sub nodes
 )
