@@ -3,7 +3,7 @@ kind: Pipeline
 metadata:
   name: my-pipeline
   namespace: default
-  type: compound
+  kind: compound
   desc: "A sample pipeline with build, test, and deploy stages"
   runtime_uuid: "pipeline-12345"
   resource_version: 1

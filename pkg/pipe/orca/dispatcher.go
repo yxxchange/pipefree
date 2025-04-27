@@ -2,10 +2,10 @@ package orca
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/spf13/viper"
 	"github.com/yxxchange/pipefree/helper/log"
 	"github.com/yxxchange/pipefree/helper/safe"
+	"github.com/yxxchange/pipefree/helper/serialize"
 	"github.com/yxxchange/pipefree/pkg/infra/etcd"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"go.etcd.io/etcd/api/v3/mvccpb"
@@ -32,10 +32,6 @@ func (e *EventFlow) Channel() *safe.Channel[[]byte] {
 	return e.bytesCh
 }
 
-func (e *EventFlow) Serialize(resp *clientv3.WatchResponse) ([]byte, error) {
-	return json.Marshal(resp)
-}
-
 func (e *EventFlow) transform(resp *clientv3.WatchResponse) (interrupted bool) {
 	if resp == nil {
 		return
@@ -54,7 +50,7 @@ func (e *EventFlow) transform(resp *clientv3.WatchResponse) (interrupted bool) {
 			}
 		}
 		event.Data = etcdEvent.Kv.Value
-		b, err := e.Serialize(resp)
+		b, err := serialize.JsonSerialize(resp)
 		if err != nil {
 			log.Errorf("serialize event error: err: %v", err)
 			continue

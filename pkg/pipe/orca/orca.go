@@ -2,7 +2,6 @@ package orca
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"sync"
@@ -38,7 +37,7 @@ func GetOrchestrator(ctx context.Context) *Orchestrator {
 }
 
 type OrcaContext struct {
-	Pipe      model.Node                  `json:"node"`
+	Pipe      model.Node                  `json:"pipe"` // pipe flow from yaml
 	DAG       map[string]*TopologyNode    `json:"dag"`
 	PhaseRepo map[model.Phase]*PhaseNodes `json:"phaseRepo"`
 
@@ -50,39 +49,23 @@ type PhaseNodes struct {
 	Map   map[string]*model.Node
 }
 
-func (m *Orchestrator) Serialize(ctx *OrcaContext) ([]byte, error) {
-	// Serialize the node to JSON
-	return json.Marshal(ctx.Pipe)
-}
-
-func (m *Orchestrator) Deserialize(b []byte) (*OrcaContext, error) {
-	// Deserialize the JSON data to a Node
-	var node model.Node
-	err := json.Unmarshal(b, &node)
-	if err != nil {
-		return nil, err
+func (o *Orchestrator) Schedule(pipe model.Node) error {
+	ctx := &OrcaContext{
+		ctx:  context.TODO(),
+		Pipe: pipe,
 	}
-	m.ctx.Pipe = node
-	err = m.init(m.ctx)
-	if err != nil {
-		return nil, err
-	}
-	return m.ctx, nil
+	return o.init(ctx)
 }
 
-func (m *Orchestrator) AddDispatcher(eg model.NodeIdentifier) *EventFlow {
-	return m.watcher.Register(eg)
-}
-
-func (m *Orchestrator) init(ctx *OrcaContext) error {
+func (o *Orchestrator) init(ctx *OrcaContext) error {
 	sorter, err := NewTopologySorter().ExtractGraph(ctx.Pipe.Graph).TopologySort()
 	if err != nil {
 		return err
 	}
 	ctx.DAG = sorter.Map
 	readyNodes := sorter.GetZeroNode()
-	m.ctx = ctx
 	ctx.PhaseRepo[model.PhaseReady] = initPhaseRepo(readyNodes)
+	o.ctx = ctx
 	return nil
 }
 
@@ -97,9 +80,9 @@ func initPhaseRepo(readyNodes TopologyNodes) *PhaseNodes {
 	return &phaseNodes
 }
 
-func (m *Orchestrator) readyToRunning(target string) error {
-	readyNodes := m.getPhaseNodes(model.PhaseReady)
-	runningNodes := m.getPhaseNodes(model.PhaseRunning)
+func (o *Orchestrator) readyToRunning(target string) error {
+	readyNodes := o.getPhaseNodes(model.PhaseReady)
+	runningNodes := o.getPhaseNodes(model.PhaseRunning)
 	node, has := readyNodes.search(target)
 	if !has {
 		return ErrorNodeNotReady
@@ -110,11 +93,11 @@ func (m *Orchestrator) readyToRunning(target string) error {
 	return nil
 }
 
-func (m *Orchestrator) getPhaseNodes(phase model.Phase) *PhaseNodes {
-	if m.ctx.PhaseRepo == nil {
-		m.ctx.PhaseRepo = make(map[model.Phase]*PhaseNodes)
+func (o *Orchestrator) getPhaseNodes(phase model.Phase) *PhaseNodes {
+	if o.ctx.PhaseRepo == nil {
+		o.ctx.PhaseRepo = make(map[model.Phase]*PhaseNodes)
 	}
-	return m.ctx.PhaseRepo[phase]
+	return o.ctx.PhaseRepo[phase]
 }
 
 func (pn *PhaseNodes) search(name string) (*model.Node, bool) {
