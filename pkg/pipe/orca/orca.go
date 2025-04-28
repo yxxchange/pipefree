@@ -3,6 +3,8 @@ package orca
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/yxxchange/pipefree/helper/log"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"sync"
 )
@@ -16,20 +18,12 @@ var (
 )
 
 type Orchestrator struct {
-	ctx *OrcaContext
-	mu  sync.Mutex
-
 	*watcher
 }
 
 func GetOrchestrator(ctx context.Context) *Orchestrator {
 	once.Do(func() {
 		orca = &Orchestrator{
-			ctx: &OrcaContext{
-				ctx:       ctx,
-				DAG:       make(map[string]*TopologyNode),
-				PhaseRepo: make(map[model.Phase]*PhaseNodes),
-			},
 			watcher: newWatcher(ctx),
 		}
 	})
@@ -37,9 +31,9 @@ func GetOrchestrator(ctx context.Context) *Orchestrator {
 }
 
 type OrcaContext struct {
-	Pipe      model.Node                  `json:"pipe"` // pipe flow from yaml
-	DAG       map[string]*TopologyNode    `json:"dag"`
-	PhaseRepo map[model.Phase]*PhaseNodes `json:"phaseRepo"`
+	Pipe model.Node               `json:"pipe"` // pipe flow from yaml
+	DAG  map[string]*TopologyNode `json:"dag"`
+	//PhaseRepo map[model.Phase]*PhaseNodes `json:"phaseRepo"`
 
 	ctx context.Context
 }
@@ -54,50 +48,27 @@ func (o *Orchestrator) Schedule(pipe model.Node) error {
 		ctx:  context.TODO(),
 		Pipe: pipe,
 	}
-	return o.init(ctx)
+	err := o.setup(ctx)
+	if err != nil {
+		log.Errorf("setup error when schedule: %v", err)
+		return err
+	}
+	return nil
 }
 
-func (o *Orchestrator) init(ctx *OrcaContext) error {
+func (o *Orchestrator) setup(ctx *OrcaContext) error {
+	// TODO: 需要重构
 	sorter, err := NewTopologySorter().ExtractGraph(ctx.Pipe.Graph).TopologySort()
 	if err != nil {
 		return err
 	}
 	ctx.DAG = sorter.Map
-	readyNodes := sorter.GetZeroNode()
-	ctx.PhaseRepo[model.PhaseReady] = initPhaseRepo(readyNodes)
-	o.ctx = ctx
+	headNode := sorter.GetZeroNode()
+	if len(headNode) != 1 {
+		return fmt.Errorf("unexpected result when setup pipe, expected 1, but %d", len(headNode))
+	}
+
 	return nil
-}
-
-func initPhaseRepo(readyNodes TopologyNodes) *PhaseNodes {
-	phaseNodes := PhaseNodes{
-		Phase: model.PhaseReady,
-		Map:   make(map[string]*model.Node),
-	}
-	for _, node := range readyNodes {
-		phaseNodes.Map[node.Node.Name] = node.Node
-	}
-	return &phaseNodes
-}
-
-func (o *Orchestrator) readyToRunning(target string) error {
-	readyNodes := o.getPhaseNodes(model.PhaseReady)
-	runningNodes := o.getPhaseNodes(model.PhaseRunning)
-	node, has := readyNodes.search(target)
-	if !has {
-		return ErrorNodeNotReady
-	}
-	readyNodes.remove(target)
-	node.Status.Phase = model.PhaseRunning
-	runningNodes.add(target, node)
-	return nil
-}
-
-func (o *Orchestrator) getPhaseNodes(phase model.Phase) *PhaseNodes {
-	if o.ctx.PhaseRepo == nil {
-		o.ctx.PhaseRepo = make(map[model.Phase]*PhaseNodes)
-	}
-	return o.ctx.PhaseRepo[phase]
 }
 
 func (pn *PhaseNodes) search(name string) (*model.Node, bool) {

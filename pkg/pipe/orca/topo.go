@@ -60,13 +60,6 @@ func (t *TopologySorter) GetZeroNode() TopologyNodes {
 		break
 	}
 
-	for _, node := range res {
-		successor := t.Map[node.Node.Name].Node.GetSuccessor()
-		for _, s := range successor {
-			t.Map[s.Name].InDegree--
-		}
-	}
-
 	return res
 }
 
