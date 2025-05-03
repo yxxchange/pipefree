@@ -1,6 +1,9 @@
 package model
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Node struct {
 	ApiVersion string `json:"apiVersion" yaml:"apiVersion"`
@@ -11,7 +14,7 @@ type Node struct {
 
 	// attributes only for compound node
 	Graph `json:"graph,omitempty" yaml:"graph,omitempty"` // the graph of the node
-	Env   Environment                                     `json:"env" yaml:"env"`
+	Env   `json:"env" yaml:"env"`
 }
 
 type MetaData struct {
@@ -88,7 +91,9 @@ func (m *MetaData) AddAncestor(ancestor *MetaData) {
 	m.ancestor = ancestor
 }
 
-type Spec map[string]interface{}
+type Spec struct {
+	json.RawMessage
+}
 
 type Status struct {
 	Phase     Phase                    `json:"phase" yaml:"phase"`
@@ -113,6 +118,6 @@ type Edge struct {
 	To   string `json:"to" yaml:"to"`
 }
 
-type Environment struct {
+type Env struct {
 	KeyValues map[string]interface{}
 }
