@@ -36,7 +36,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Info("start to watch")
 	idf := model.NodeIdentifier{
 		ApiVersion: s.param.ApiVersion,
-		Namespace:  s.param.Namespace,
+		Space:      s.param.Namespace,
 		Kind:       s.param.Kind,
 		Operation:  s.param.Operation,
 	}

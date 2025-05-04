@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/yxxchange/pipefree/helper/log"
+	"github.com/yxxchange/pipefree/pkg/infra/nebula"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"sync"
 )
@@ -30,69 +30,19 @@ func GetOrchestrator(ctx context.Context) *Orchestrator {
 	return orca
 }
 
-type OrcaContext struct {
-	Pipe model.Node               `json:"pipe"` // pipe flow from yaml
-	DAG  map[string]*TopologyNode `json:"dag"`
-	//PhaseRepo map[model.Phase]*PhaseNodes `json:"phaseRepo"`
-
-	ctx context.Context
-}
-
-type PhaseNodes struct {
-	Phase model.Phase
-	Map   map[string]*model.Node
-}
-
 func (o *Orchestrator) Schedule(pipe model.Node) error {
-	ctx := &OrcaContext{
-		ctx:  context.TODO(),
-		Pipe: pipe,
-	}
-	err := o.setup(ctx)
-	if err != nil {
-		log.Errorf("setup error when schedule: %v", err)
-		return err
-	}
 	return nil
 }
 
-func (o *Orchestrator) setup(ctx *OrcaContext) error {
-	// TODO: 需要重构
-	sorter, err := NewTopologySorter().ExtractGraph(ctx.Pipe.Graph).TopologySort()
+func (o *Orchestrator) Create(raw string) error {
+	vertexes, err := NewGraphBuilder().ProcessYaml(raw).ProcessGraph().Build()
 	if err != nil {
-		return err
+		return fmt.Errorf("create pipe error: %v", err)
 	}
-	ctx.DAG = sorter.Map
-	headNode := sorter.GetZeroNode()
-	if len(headNode) != 1 {
-		return fmt.Errorf("unexpected result when setup pipe, expected 1, but %d", len(headNode))
+	if len(vertexes) == 0 {
+		return fmt.Errorf("pipe is empty")
 	}
-
+	// todo: sql
+	nebula.UseSpace(vertexes[0].MetaData.Space).Execute("")
 	return nil
-}
-
-func (pn *PhaseNodes) search(name string) (*model.Node, bool) {
-	if len(pn.Map) == 0 {
-		return nil, false
-	}
-	node, has := pn.Map[name]
-	if !has {
-		return nil, false
-	}
-	return node, true
-}
-
-func (pn *PhaseNodes) add(name string, node *model.Node) {
-	if pn.Map == nil {
-		pn.Map = make(map[string]*model.Node)
-	}
-	pn.Map[name] = node
-}
-
-func (pn *PhaseNodes) remove(name string) {
-	if pn.Map == nil {
-		pn.Map = make(map[string]*model.Node)
-		return
-	}
-	delete(pn.Map, name)
 }

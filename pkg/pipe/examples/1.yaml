@@ -21,7 +21,7 @@ graph:
       to: deploy
     - from: test
       to: deploy
-  nodes:
+  vertexes:
     - apiVersion: pipeline.pipe/v1
       kind: Task
       metadata:

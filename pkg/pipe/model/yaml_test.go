@@ -18,7 +18,7 @@ func Test_Deserialize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read file: %v", err)
 	}
-	var node Node
+	var node NodeInfo
 	err = yaml.Unmarshal(raw, &node)
 	if err != nil {
 		t.Fatalf("failed to unmarshal json: %v", err)
