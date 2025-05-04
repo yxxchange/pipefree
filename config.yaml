@@ -9,12 +9,6 @@ app:
 http:
   port: 8080
 
-database:
-  type: mysql
-  host: localhost
-  port: 3306
-  password: password
-
 redis:
   host: localhost
   port: 6379
@@ -31,6 +25,20 @@ etcd:
     maxSize: 5
     interval: 30 # second
     jitter: 0.3 # float
+
+nebula:
+  host: 172.25.144.171
+  port: 9669
+  userName: root
+  password: <none>
+  sessionConfig:
+    poolMaxSize: 100
+    poolMinSize: 30
+    idleTime: 30 # second
+    timeout: 0 # second
+    useHttp2: false
+
+
 
 orca:
   watcher:

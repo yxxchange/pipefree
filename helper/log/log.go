@@ -43,6 +43,8 @@ type ILogger interface {
 	Errorf(format string, args ...interface{})
 	Warn(msg string)
 	Warnf(format string, args ...interface{})
+	Fatal(msg string)
+	Fatalf(format string, args ...interface{})
 }
 
 func Debug(msg string) {
@@ -104,6 +106,14 @@ func (l *Log) Warn(msg string) {
 
 func (l *Log) Warnf(format string, args ...interface{}) {
 	l.logger.Warn(fmt.Sprintf(format, args))
+}
+
+func (l *Log) Fatal(msg string) {
+	l.logger.Fatal(msg)
+}
+
+func (l *Log) Fatalf(format string, args ...interface{}) {
+	l.logger.Fatal(fmt.Sprintf(format, args))
 }
 
 func wrap(logger *zap.Logger) ILogger {
@@ -201,4 +211,8 @@ func builtinLog() {
 
 func AsZapLoggerPlugin() *zap.Logger {
 	return _logger.(*Log).logger
+}
+
+func AsNebularLoggerPlugin() ILogger {
+	return _logger
 }
