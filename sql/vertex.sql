@@ -11,5 +11,4 @@ CREATE TAG IF NOT EXISTS node (
     name STRING NOT NULL COMMENT 'node name',
 
 
-
 )
