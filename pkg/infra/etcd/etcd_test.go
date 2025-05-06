@@ -11,7 +11,7 @@ import (
 )
 
 func TestEtcd(t *testing.T) {
-	config.InitConfig("../../../config.yaml")
+	config.Init("../../../config.yaml")
 	defer func() {
 		_ = Close()
 	}()

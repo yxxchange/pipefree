@@ -34,6 +34,15 @@ func init() {
 	builtinLog()
 }
 
+func Init() {
+	NewBuilder().
+		LogTo(os.Stdout).
+		LogWhen(zapcore.InfoLevel).
+		EncodeWith(DefaultCfg, JsonFormat).
+		EnableCaller().
+		StackTraceOn(zapcore.ErrorLevel)
+}
+
 type ILogger interface {
 	Debug(msg string)
 	Debugf(format string, args ...interface{})
@@ -144,8 +153,10 @@ func (b *Builder) EncodeWith(cfg zapcore.EncoderConfig, format string) *Builder 
 	return b
 }
 
-func (b *Builder) LogTo(w io.Writer) *Builder {
-	b.syncs = append(b.syncs, zapcore.AddSync(w))
+func (b *Builder) LogTo(writer ...io.Writer) *Builder {
+	for _, w := range writer {
+		b.syncs = append(b.syncs, zapcore.AddSync(w))
+	}
 	return b
 }
 

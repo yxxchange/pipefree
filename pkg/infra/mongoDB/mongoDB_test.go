@@ -7,7 +7,7 @@ import (
 )
 
 func TestInitMongoDB(t *testing.T) {
-	config.InitConfig("../../../config.yaml")
+	config.Init("../../../config.yaml")
 	Init()
 	res, err := AssignDB("test", "users").InsertOne(context.Background(), map[string]interface{}{
 		"name": "Donald Trump",

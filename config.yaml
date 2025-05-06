@@ -6,13 +6,23 @@ app:
     mode: dev
     debug: true
 
+
+log:
+  level: debug
+  format: json
+  appender:
+    defaultAppender: stdout
+    kafkaAppender:
+      enabled: false
+      topic: pipeFree
+      brokers:
+            - localhost:9092
+
 http:
   port: 8080
 
-redis:
-  host: localhost
-  port: 6379
-  password: password
+
+
 
 etcd:
   endpoints:
@@ -54,9 +64,6 @@ mongoDB:
       minPoolSize: 10
       maxConnIdleTime: 30 # seconds
       needAuth: false
-
-
-
 
 orca:
   watcher:

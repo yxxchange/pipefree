@@ -31,7 +31,7 @@ func (s TestEdge) EdgeTypeName() string {
 }
 
 func TestNebula(t *testing.T) {
-	config.InitConfig("../../../config.yaml")
+	config.Init("../../../config.yaml")
 	Init()
 
 	log.Info("nebula test ok")

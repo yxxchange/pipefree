@@ -7,7 +7,7 @@ import (
 
 var once sync.Once
 
-func InitConfig(path string) {
+func Init(path string) {
 	once.Do(func() {
 		viper.SetConfigFile(path)
 		err := viper.ReadInConfig()
