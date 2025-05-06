@@ -1,35 +1,55 @@
 package nebula
 
 import (
-	"fmt"
+	"github.com/haysons/nebulaorm"
 	"github.com/spf13/viper"
-	nebula "github.com/vesoft-inc/nebula-go/v3"
 	"github.com/yxxchange/pipefree/helper/log"
+	"time"
 
 	"sync"
-	"time"
 )
 
 var Pool *SessionManager
 var once sync.Once
 
-type SessionExecutor struct {
-	Space string
-	Err   error
-	Res   *nebula.ResultSet
+func Open(user, passwd, space string) error {
+	if Pool == nil {
+		initPool()
+	}
+
+	_, ok := Pool.Get(space)
+	if !ok {
+		_, err := Pool.Open(space, user, passwd)
+		return err
+	}
+	return nil
+}
+
+func Use(space string) *nebulaorm.DB {
+	session, ok := Pool.Get(space)
+	if !ok {
+		panic("must open the space before use")
+	}
+	return session.DB
 }
 
 type Session struct {
-	*nebula.SessionPool
-	*nebula.SessionPoolConf
+	*nebulaorm.DB
+	*nebulaorm.Config
+}
+
+func (s *Session) Close() {
+	if s.DB != nil {
+		err := s.DB.Close()
+		if err != nil {
+			log.Errorf("close session error: %v", err)
+		}
+	}
 }
 
 type SessionManager struct {
-	mu    sync.RWMutex
+	mu    sync.Mutex
 	store map[string]*Session
-
-	hostAddressList []nebula.HostAddress
-	options         []nebula.SessionPoolConfOption
 }
 
 func (s *SessionManager) Close() {
@@ -41,97 +61,42 @@ func (s *SessionManager) Close() {
 	Pool.store = make(map[string]*Session)
 }
 
-func (s *SessionManager) get(space string) (*Session, bool) {
-	Pool.mu.RLock()
-	defer Pool.mu.RUnlock()
+func (s *SessionManager) Get(space string) (*Session, bool) {
+	Pool.mu.Lock()
+	defer Pool.mu.Unlock()
 	pool, ok := Pool.store[space]
 	return pool, ok
 }
 
-func (s *SessionManager) create(space string) error {
+func (s *SessionManager) Open(space, user, passwd string) (*Session, error) {
 	Pool.mu.Lock()
 	defer Pool.mu.Unlock()
-	conf, err := nebula.NewSessionPoolConf(
-		viper.GetString("nebula.userName"),
-		viper.GetString("nebula.password"),
-		Pool.hostAddressList,
-		space,
-		Pool.options...,
-	)
-	if err != nil {
-		return err
+	conf := &nebulaorm.Config{
+		Username:        user,
+		Password:        passwd,
+		SpaceName:       space,
+		Addresses:       viper.GetStringSlice("nebula.address"),
+		ConnTimeout:     viper.GetDuration("nebula.timeout") * time.Second,
+		ConnMaxIdleTime: viper.GetDuration("nebula.idleTime") * time.Second,
+		MaxOpenConns:    viper.GetInt("nebula.maxConnSize"),
+		MinOpenConns:    viper.GetInt("nebula.minConnSize"),
 	}
-	pool, err := nebula.NewSessionPool(*conf, log.AsNebularLoggerPlugin())
+	db, err := nebulaorm.Open(conf)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	session := &Session{
-		SessionPool:     pool,
-		SessionPoolConf: conf,
+		DB:     db,
+		Config: conf,
 	}
 	Pool.store[space] = session
-	return nil
+	return session, nil
 }
 
 func initPool() {
 	once.Do(func() {
 		Pool = &SessionManager{
 			store: make(map[string]*Session),
-			hostAddressList: []nebula.HostAddress{
-				{
-					Host: viper.GetString("nebula.host"),
-					Port: viper.GetInt("nebula.port"),
-				},
-			},
-			options: []nebula.SessionPoolConfOption{
-				nebula.WithTimeOut(time.Duration(viper.GetInt("nebula.sessionConfig.timeout")) * time.Second),
-				nebula.WithIdleTime(time.Duration(viper.GetInt("nebula.sessionConfig.idleTime")) * time.Second),
-				nebula.WithMaxSize(viper.GetInt("nebula.sessionConfig.poolMaxSize")),
-				nebula.WithMinSize(viper.GetInt("nebula.sessionConfig.poolMinSize")),
-				nebula.WithHTTP2(viper.GetBool("nebula.sessionConfig.useHttp2")),
-			},
 		}
 	})
-}
-
-func UseSpace(space string) *SessionExecutor {
-	if Pool == nil {
-		initPool()
-	}
-	executor := &SessionExecutor{
-		Space: space,
-	}
-	if _, ok := Pool.get(space); !ok {
-		executor.Err = Pool.create(space)
-	}
-	return executor
-}
-
-func (s *Session) Close() {
-	if s.SessionPool != nil {
-		s.SessionPool.Close()
-	}
-}
-
-func (s *SessionExecutor) Execute(sql string) *SessionExecutor {
-	if s.Err != nil {
-		return s
-	}
-	if session, ok := Pool.get(s.Space); !ok {
-		s.Err = fmt.Errorf("must specify the nebula space")
-	} else {
-		s.Res, s.Err = session.Execute(sql)
-	}
-	return s.handleResultSet(s.Res)
-}
-
-func (s *SessionExecutor) handleResultSet(res *nebula.ResultSet) *SessionExecutor {
-	if res == nil {
-		return s
-	}
-	if res.IsSucceed() {
-		return s
-	}
-	s.Err = fmt.Errorf("nebula execute, error code: %d, error: %s", res.GetErrorCode(), res.GetErrorMsg())
-	return s
 }

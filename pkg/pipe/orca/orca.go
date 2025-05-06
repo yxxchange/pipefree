@@ -43,6 +43,6 @@ func (o *Orchestrator) Create(raw string) error {
 		return fmt.Errorf("pipe is empty")
 	}
 	// todo: sql
-	nebula.UseSpace(vertexes[0].MetaData.Space).Execute("")
+	nebula.OpenSpace(vertexes[0].MetaData.Space).Execute()
 	return nil
 }

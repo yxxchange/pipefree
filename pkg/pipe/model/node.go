@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/yxxchange/pipefree/helper/serialize"
 )
 
 type NodeInfo struct {
@@ -12,6 +13,17 @@ type NodeInfo struct {
 	Spec       Spec     `json:"spec" yaml:"spec"`
 	Env        Env      `json:"env" yaml:"env"`
 	Status     Status   `json:"status" yaml:"status"`
+}
+
+func (n NodeInfo) ConvertToBasicTag() NodeBasicTag {
+	b1, _ := serialize.JsonSerialize(n.MetaData)
+	b2, _ := serialize.JsonSerialize(n.Spec)
+	return NodeBasicTag{
+		ApiVersion: n.ApiVersion,
+		Kind:       string(n.Kind),
+		MetaData:   string(b1),
+		Spec:       string(b2),
+	}
 }
 
 type Node struct {
