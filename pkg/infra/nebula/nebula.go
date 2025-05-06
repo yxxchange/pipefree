@@ -1,6 +1,7 @@
 package nebula
 
 import (
+	"fmt"
 	"github.com/haysons/nebulaorm"
 	"github.com/spf13/viper"
 	"github.com/yxxchange/pipefree/helper/log"
@@ -9,24 +10,42 @@ import (
 	"sync"
 )
 
-var Pool *SessionManager
+var pool *SessionManager
 var once sync.Once
 
-func Open(user, passwd, space string) error {
-	if Pool == nil {
-		initPool()
-	}
+func Init() {
+	once.Do(func() {
+		initNebula()
+	})
+}
 
-	_, ok := Pool.Get(space)
+func initNebula() {
+	user := viper.GetString("nebula.username")
+	passwd := viper.GetString("nebula.password")
+	spaces := viper.GetStringSlice("nebula.spaces")
+	initPool()
+	if len(spaces) == 0 {
+		panic("spaces is empty")
+	}
+	for _, space := range spaces {
+		_, err := pool.open(space, user, passwd)
+		if err != nil {
+			panic(fmt.Errorf("open space %s error: %v", space, err))
+		}
+	}
+}
+
+func open(user, passwd, space string) error {
+	_, ok := pool.Get(space)
 	if !ok {
-		_, err := Pool.Open(space, user, passwd)
+		_, err := pool.open(space, user, passwd)
 		return err
 	}
 	return nil
 }
 
 func Use(space string) *nebulaorm.DB {
-	session, ok := Pool.Get(space)
+	session, ok := pool.Get(space)
 	if !ok {
 		panic("must open the space before use")
 	}
@@ -53,24 +72,24 @@ type SessionManager struct {
 }
 
 func (s *SessionManager) Close() {
-	Pool.mu.Lock()
-	defer Pool.mu.Unlock()
-	for _, session := range Pool.store {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+	for _, session := range pool.store {
 		session.Close()
 	}
-	Pool.store = make(map[string]*Session)
+	pool.store = make(map[string]*Session)
 }
 
 func (s *SessionManager) Get(space string) (*Session, bool) {
-	Pool.mu.Lock()
-	defer Pool.mu.Unlock()
-	pool, ok := Pool.store[space]
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+	pool, ok := pool.store[space]
 	return pool, ok
 }
 
-func (s *SessionManager) Open(space, user, passwd string) (*Session, error) {
-	Pool.mu.Lock()
-	defer Pool.mu.Unlock()
+func (s *SessionManager) open(space, user, passwd string) (*Session, error) {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
 	conf := &nebulaorm.Config{
 		Username:        user,
 		Password:        passwd,
@@ -89,14 +108,19 @@ func (s *SessionManager) Open(space, user, passwd string) (*Session, error) {
 		DB:     db,
 		Config: conf,
 	}
-	Pool.store[space] = session
+	pool.store[space] = session
 	return session, nil
 }
 
 func initPool() {
-	once.Do(func() {
-		Pool = &SessionManager{
-			store: make(map[string]*Session),
-		}
-	})
+	pool = &SessionManager{
+		store: make(map[string]*Session),
+	}
+}
+
+func Close() {
+	if pool != nil {
+		pool.Close()
+	}
+	log.Info("close nebula session")
 }

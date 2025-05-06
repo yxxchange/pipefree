@@ -1,7 +1,6 @@
 package nebula
 
 import (
-	"github.com/spf13/viper"
 	"github.com/yxxchange/pipefree/config"
 	"github.com/yxxchange/pipefree/helper/log"
 	"testing"
@@ -33,15 +32,10 @@ func (s TestEdge) EdgeTypeName() string {
 
 func TestNebula(t *testing.T) {
 	config.InitConfig("../../../config.yaml")
-	user := viper.GetString("nebula.username")
-	passwd := viper.GetString("nebula.password")
-	err := Open(user, passwd, "test")
-	if err != nil {
-		log.Errorf("err: %v", err)
-		return
-	}
+	Init()
+
 	log.Info("nebula test ok")
-	err = initTestGraph()
+	err := initTestGraph()
 	if err != nil {
 		log.Errorf("err: %v", err)
 		return

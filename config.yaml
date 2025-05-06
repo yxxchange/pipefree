@@ -31,12 +31,30 @@ nebula:
     - 172.25.144.171:9669
   username: root
   password: <none>
+  spaces:
+    - test
   sessionConfig:
     maxConnSize: 100
     minConnSize: 30
     idleTime: 30 # second
     timeout: 0 # second
     useHttp2: false
+
+mongoDB:
+    uri: mongodb://172.25.144.171:27017
+    username: root
+    password: <none>
+    database: pipeFree
+    collections:
+      - pipe_cfg
+      - pipe_exec_snapshot
+    options:
+      timeout: 30 # seconds
+      maxPoolSize: 100
+      minPoolSize: 10
+      maxConnIdleTime: 30 # seconds
+      needAuth: false
+
 
 
 

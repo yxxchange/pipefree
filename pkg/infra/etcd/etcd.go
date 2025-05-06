@@ -20,7 +20,7 @@ var (
 var etcd *clientv3.Client
 var once sync.Once
 
-func LaunchEtcdClient() {
+func Init() {
 	err := NewLauncher().
 		SetEndpoint(viper.GetStringSlice("etcd.endpoints")).
 		RegisterLogger(log.AsZapLoggerPlugin()).
@@ -164,9 +164,12 @@ func Watch(ctx context.Context, key string, opts ...clientv3.OpOption) <-chan cl
 }
 
 // Close 关闭连接
-func Close() error {
+func Close() {
 	if etcd != nil {
-		return etcd.Close()
+		err := etcd.Close()
+		if err != nil {
+			log.Errorf("close etcd client err: %v", err)
+		}
 	}
-	return nil
+	log.Info("etcd client closed")
 }
