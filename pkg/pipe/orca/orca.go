@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/yxxchange/pipefree/pkg/infra/nebula"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"sync"
 )
@@ -43,6 +42,5 @@ func (o *Orchestrator) Create(raw string) error {
 		return fmt.Errorf("pipe is empty")
 	}
 	// todo: sql
-	nebula.OpenSpace(vertexes[0].MetaData.Space).Execute()
 	return nil
 }

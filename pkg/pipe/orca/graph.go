@@ -4,7 +4,6 @@ import (
 	"container/heap"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/yxxchange/pipefree/helper/serialize"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 )
@@ -64,9 +63,8 @@ func (t *GraphBuilder) Build() ([]*model.NodeInfo, error) {
 		return nil, t.Err
 	}
 	var vertexes []*model.NodeInfo
-	for _, vertex := range t.List {
-		vertex.Node.MetaData.VID = uuid.New().String()
-		vertexes = append(vertexes, vertex.Node)
+	for _, topo := range t.List {
+		vertexes = append(vertexes, topo.Node)
 	}
 	return vertexes, nil
 }
@@ -109,16 +107,6 @@ func (t *GraphBuilder) validate(node *model.Node) *GraphBuilder {
 		t.Err = fmt.Errorf("node apiVersion is empty")
 		return t
 	}
-	if node.MetaData.Tag == "" {
-		t.Err = fmt.Errorf("node tag is empty")
-		return t
-	}
-	t.tagCollector[node.MetaData.Tag] = struct{}{}
-	if node.MetaData.Space == "" {
-		t.Err = fmt.Errorf("node space is empty")
-		return t
-	}
-	t.spaceCollector[node.MetaData.Space] = struct{}{}
 	if node.Kind == model.NodeKindScalar && node.Graph != nil {
 		t.Err = fmt.Errorf("node of scalar kind should not contain graph defined")
 		return t

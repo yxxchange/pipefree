@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/yxxchange/pipefree/helper/serialize"
 )
 
@@ -15,7 +16,7 @@ type NodeInfo struct {
 	Status     Status   `json:"status" yaml:"status"`
 }
 
-func (n NodeInfo) ConvertToBasicTag() NodeBasicTag {
+func (n NodeInfo) ToBasicTag() NodeBasicTag {
 	b1, _ := serialize.JsonSerialize(n.MetaData)
 	b2, _ := serialize.JsonSerialize(n.Spec)
 	return NodeBasicTag{
@@ -31,12 +32,21 @@ type Node struct {
 	Graph *Graph `json:"graph,omitempty" yaml:"graph,omitempty"` // the graph of the node
 }
 
+func (n Node) ToSnapshot() NodeSnapshot {
+	nodeSnapshot := NodeSnapshot{
+		VID:  "vid-" + uuid.New().String(),
+		Node: n,
+	}
+	if n.Graph != nil {
+		g := n.Graph.ToSnapshot()
+		nodeSnapshot.Graph = &g
+	}
+	return nodeSnapshot
+}
+
 type MetaData struct {
 	// Static config
 	Name      string `json:"name" yaml:"name"`
-	VID       string `json:"vid" yaml:"vid"`     // the unique id of the node
-	Space     string `json:"space" yaml:"space"` // like schema
-	Tag       string `json:"tag" yaml:"tag"`     // like table
 	Operation string `json:"operation" yaml:"operation"`
 	Desc      string `json:"desc" yaml:"desc"`
 
@@ -116,6 +126,18 @@ type Graph struct {
 	Edges     []Edge   `json:"edges,omitempty" yaml:"edges,omitempty"`
 	Vertexes  []Node   `json:"vertexes,omitempty" yaml:"vertexes,omitempty"`
 	Reference MetaData `json:"reference,omitempty" yaml:"reference,omitempty"`
+}
+
+func (g Graph) ToSnapshot() GraphSnapshot {
+	graphSnapshot := GraphSnapshot{
+		Edges:     g.Edges,
+		Vertexes:  make([]NodeSnapshot, len(g.Vertexes)),
+		Reference: g.Reference,
+	}
+	for i, vertex := range g.Vertexes {
+		graphSnapshot.Vertexes[i] = vertex.ToSnapshot()
+	}
+	return graphSnapshot
 }
 
 type Edge struct {
