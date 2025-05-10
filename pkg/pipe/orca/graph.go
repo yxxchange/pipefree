@@ -38,7 +38,7 @@ func (t *TopologyNodes) Pop() any {
 }
 
 type GraphBuilder struct {
-	View     model.Node
+	Node     model.Node
 	Map      map[string]*TopologyNode
 	List     TopologyNodes
 	Vertexes []*model.NodeInfo
@@ -69,6 +69,23 @@ func (t *GraphBuilder) Build() ([]*model.NodeInfo, error) {
 	return vertexes, nil
 }
 
+func (t *GraphBuilder) ProcessPipeCfg(pipe model.PipeConfig) *GraphBuilder {
+	if t.Err != nil {
+		return t
+	}
+	t.Node = pipe.Node
+	t.validate(&t.Node)
+	if len(t.spaceCollector) > 1 {
+		t.Err = fmt.Errorf("only one space is allowed, but got %d", len(t.spaceCollector))
+		return t
+	}
+	if len(t.tagCollector) > 1 {
+		t.Err = fmt.Errorf("only one tag is allowed, but got %d", len(t.tagCollector))
+		return t
+	}
+	return t
+}
+
 func (t *GraphBuilder) ProcessYaml(raw string) *GraphBuilder {
 	if t.Err != nil {
 		return t
@@ -78,8 +95,8 @@ func (t *GraphBuilder) ProcessYaml(raw string) *GraphBuilder {
 		t.Err = fmt.Errorf("deserialize pipe error: %v", err)
 		return t
 	}
-	t.View = nodeView
-	t.validate(&t.View)
+	t.Node = nodeView
+	t.validate(&t.Node)
 	if len(t.spaceCollector) > 1 {
 		t.Err = fmt.Errorf("only one space is allowed, but got %d", len(t.spaceCollector))
 		return t
@@ -130,11 +147,11 @@ func (t *GraphBuilder) ProcessGraph() *GraphBuilder {
 	if t.Err != nil {
 		return t
 	}
-	graph := t.View.Graph
+	graph := t.Node.Graph
 	t.Map = make(map[string]*TopologyNode)
 	// add the head node
-	t.Map[t.View.MetaData.Name] = &TopologyNode{
-		Node:     &t.View.NodeInfo,
+	t.Map[t.Node.MetaData.Name] = &TopologyNode{
+		Node:     &t.Node.NodeInfo,
 		InDegree: 0,
 	}
 	for i := 0; i < len(graph.Vertexes); i++ {
@@ -156,7 +173,7 @@ func (t *GraphBuilder) ProcessGraph() *GraphBuilder {
 		t.Map[graph.Edges[i].To].InDegree++
 		t.Map[graph.Edges[i].From].Node.MetaData.AddTo(&t.Map[graph.Edges[i].To].Node.MetaData)
 		t.Map[graph.Edges[i].To].Node.MetaData.AddFrom(&t.Map[graph.Edges[i].From].Node.MetaData)
-		t.Map[graph.Edges[i].To].Node.MetaData.AddAncestor(&t.View.MetaData)
+		t.Map[graph.Edges[i].To].Node.MetaData.AddAncestor(&t.Node.MetaData)
 	}
 	if len(t.Map) == 0 {
 		t.Err = ErrorEmpty

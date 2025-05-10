@@ -7,12 +7,34 @@ const (
 	BasicEdgeName = "pipe_node_basic_edge"
 )
 
+type GraphMeta struct {
+	Vertexes []NodeBasicTag
+	Edges    []BasicEdge
+}
+
 type NodeBasicTag struct {
 	VID        string `json:"vid" norm:"vid"`
 	ApiVersion string `json:"apiVersion" norm:"api_version"`
 	Kind       string `json:"kind" norm:"kind"`
 	MetaData   string `json:"metadata" norm:"metadata"`
 	Spec       string `json:"spec" norm:"spec"`
+}
+
+func (n NodeBasicTag) ToIdentifier() NodeIdentifier {
+	var meta MetaData
+	_ = serialize.JsonDeserialize([]byte(n.MetaData), &meta)
+	return NodeIdentifier{
+		ApiVersion: n.ApiVersion,
+		Kind:       Kind(n.Kind),
+		Space:      meta.Space,
+		Tag:        meta.Tag,
+		Operation:  meta.Operation,
+	}
+}
+
+func (n NodeBasicTag) ToString() string {
+	b, _ := serialize.JsonSerialize(n)
+	return string(b)
 }
 
 func (n NodeBasicTag) VertexTagName() string {

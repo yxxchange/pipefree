@@ -30,6 +30,8 @@ func v1(r *gin.RouterGroup) {
 	{
 		pipe.GET("/watch", api.Watch)
 		pipe.GET("/list", api.List)
+		pipe.POST("/create", api.CreatePipe)
+		pipe.POST("/run", api.RunPipe)
 	}
 
 }

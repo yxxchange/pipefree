@@ -44,10 +44,18 @@ func (n Node) ToSnapshot() NodeSnapshot {
 	return nodeSnapshot
 }
 
+func (n Node) ToPipeCfg() PipeConfig {
+	return PipeConfig{
+		Node: n,
+	}
+}
+
 type MetaData struct {
 	// Static config
 	Name      string `json:"name" yaml:"name"`
 	Operation string `json:"operation" yaml:"operation"`
+	Space     string `json:"space" yaml:"space"`
+	Tag       string `json:"tag" yaml:"tag"`
 	Desc      string `json:"desc" yaml:"desc"`
 
 	// Dynamic config
