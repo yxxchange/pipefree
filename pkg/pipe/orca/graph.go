@@ -38,10 +38,10 @@ func (t *TopologyNodes) Pop() any {
 }
 
 type GraphBuilder struct {
-	Node     model.Node
+	Node     model.PipeFlow
 	Map      map[string]*TopologyNode
 	List     TopologyNodes
-	Vertexes []*model.NodeInfo
+	Vertexes []*model.Node
 
 	nameCollector  map[string]struct{}
 	spaceCollector map[string]struct{}
@@ -58,11 +58,11 @@ func NewGraphBuilder() *GraphBuilder {
 	}
 }
 
-func (t *GraphBuilder) Build() ([]*model.NodeInfo, error) {
+func (t *GraphBuilder) Build() ([]*model.Node, error) {
 	if t.Err != nil {
 		return nil, t.Err
 	}
-	var vertexes []*model.NodeInfo
+	var vertexes []*model.Node
 	for _, topo := range t.List {
 		vertexes = append(vertexes, topo.Node)
 	}
@@ -73,8 +73,7 @@ func (t *GraphBuilder) ProcessPipeCfg(pipe model.PipeConfig) *GraphBuilder {
 	if t.Err != nil {
 		return t
 	}
-	t.Node = pipe.Node
-	t.validate(&t.Node)
+	t.Node = pipe.PipeFlow
 	if len(t.spaceCollector) > 1 {
 		t.Err = fmt.Errorf("only one space is allowed, but got %d", len(t.spaceCollector))
 		return t
@@ -90,13 +89,12 @@ func (t *GraphBuilder) ProcessYaml(raw string) *GraphBuilder {
 	if t.Err != nil {
 		return t
 	}
-	var nodeView model.Node
+	var nodeView model.PipeFlow
 	if err := serialize.YamlDeserialize([]byte(raw), &nodeView); err != nil {
 		t.Err = fmt.Errorf("deserialize pipe error: %v", err)
 		return t
 	}
 	t.Node = nodeView
-	t.validate(&t.Node)
 	if len(t.spaceCollector) > 1 {
 		t.Err = fmt.Errorf("only one space is allowed, but got %d", len(t.spaceCollector))
 		return t
@@ -108,81 +106,11 @@ func (t *GraphBuilder) ProcessYaml(raw string) *GraphBuilder {
 	return t
 }
 
-func (t *GraphBuilder) validate(node *model.Node) *GraphBuilder {
-	if t.Err != nil {
-		return t
-	}
-	if node.MetaData.Name == "" {
-		t.Err = fmt.Errorf("node name is empty")
-		return t
-	}
-	if _, ok := t.nameCollector[node.MetaData.Name]; ok {
-		t.Err = fmt.Errorf("node name %s is duplicated", node.MetaData.Name)
-		return t
-	}
-	if node.ApiVersion == "" {
-		t.Err = fmt.Errorf("node apiVersion is empty")
-		return t
-	}
-	if node.Kind == model.NodeKindScalar && node.Graph != nil {
-		t.Err = fmt.Errorf("node of scalar kind should not contain graph defined")
-		return t
-	}
-	if node.Kind == model.NodeKindCompound && node.Graph == nil {
-		t.Err = fmt.Errorf("node of compound kind should contain graph defined")
-		return t
-	}
-	if node.Graph != nil {
-		for i := 0; i < len(node.Graph.Vertexes); i++ {
-			t.validate(&node.Graph.Vertexes[i])
-			if t.Err != nil {
-				return t
-			}
-		}
-	}
-	return t
-}
-
 func (t *GraphBuilder) ProcessGraph() *GraphBuilder {
 	if t.Err != nil {
 		return t
 	}
-	graph := t.Node.Graph
-	t.Map = make(map[string]*TopologyNode)
-	// add the head node
-	t.Map[t.Node.MetaData.Name] = &TopologyNode{
-		Node:     &t.Node.NodeInfo,
-		InDegree: 0,
-	}
-	for i := 0; i < len(graph.Vertexes); i++ {
-		node := &TopologyNode{
-			Node:     &graph.Vertexes[i].NodeInfo,
-			InDegree: 0,
-		}
-		t.Map[graph.Vertexes[i].MetaData.Name] = node
-	}
-	for i := 0; i < len(graph.Edges); i++ {
-		if _, ok := t.Map[graph.Edges[i].From]; !ok {
-			t.Err = fmt.Errorf("node %s not found", graph.Edges[i].From)
-			return t
-		}
-		if _, ok := t.Map[graph.Edges[i].To]; !ok {
-			t.Err = fmt.Errorf("node %s not found", graph.Edges[i].To)
-			return t
-		}
-		t.Map[graph.Edges[i].To].InDegree++
-		t.Map[graph.Edges[i].From].Node.MetaData.AddTo(&t.Map[graph.Edges[i].To].Node.MetaData)
-		t.Map[graph.Edges[i].To].Node.MetaData.AddFrom(&t.Map[graph.Edges[i].From].Node.MetaData)
-		t.Map[graph.Edges[i].To].Node.MetaData.AddAncestor(&t.Node.MetaData)
-	}
-	if len(t.Map) == 0 {
-		t.Err = ErrorEmpty
-		return t
-	}
-	t.List = make(TopologyNodes, 0, len(t.Map))
-	for _, node := range t.Map {
-		t.List = append(t.List, node)
-	}
+	// todo
 	return t.sort()
 }
 
@@ -210,6 +138,6 @@ func (t *GraphBuilder) sort() *GraphBuilder {
 
 type TopologyNode struct {
 	// Node is the node of the orca
-	Node     *model.NodeInfo `json:"node"`
-	InDegree int             `json:"inDegree"`
+	Node     *model.Node `json:"node"`
+	InDegree int         `json:"inDegree"`
 }

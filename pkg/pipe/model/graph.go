@@ -54,8 +54,8 @@ func (e BasicEdge) EdgeTypeName() string {
 	return BasicEdgeName
 }
 
-func (n NodeBasicTag) ConvertToNodeInfo() NodeInfo {
-	var res NodeInfo
+func (n NodeBasicTag) ConvertToNodeInfo() Node {
+	var res Node
 	res.ApiVersion = n.ApiVersion
 	res.Kind = Kind(n.Kind)
 	var spec Spec

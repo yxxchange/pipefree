@@ -7,7 +7,7 @@ import (
 	"github.com/yxxchange/pipefree/helper/serialize"
 )
 
-type NodeInfo struct {
+type Node struct {
 	ApiVersion string   `json:"apiVersion" yaml:"apiVersion"`
 	Kind       Kind     `json:"kind" yaml:"kind"`
 	MetaData   MetaData `json:"metadata" yaml:"metadata"`
@@ -16,7 +16,21 @@ type NodeInfo struct {
 	Status     Status   `json:"status" yaml:"status"`
 }
 
-func (n NodeInfo) ToBasicTag() NodeBasicTag {
+func (n Node) Validate() error {
+	if n.ApiVersion == "" {
+		return fmt.Errorf("apiVersion is required")
+	}
+	if n.Kind == "" {
+		return fmt.Errorf("kind is required")
+	}
+	if n.MetaData.Name == "" {
+		return fmt.Errorf("name is required")
+	}
+
+	return nil
+}
+
+func (n Node) ToBasicTag() NodeBasicTag {
 	b1, _ := serialize.JsonSerialize(n.MetaData)
 	b2, _ := serialize.JsonSerialize(n.Spec)
 	return NodeBasicTag{
@@ -27,43 +41,78 @@ func (n NodeInfo) ToBasicTag() NodeBasicTag {
 	}
 }
 
-type Node struct {
-	NodeInfo
-	Graph *Graph `json:"graph,omitempty" yaml:"graph,omitempty"` // the graph of the node
+func (n Node) ToSnapshot() Node {
+	n.MetaData.RuntimeUUID = uuid.New().String()
+	return n
 }
 
-func (n Node) ToSnapshot() NodeSnapshot {
-	nodeSnapshot := NodeSnapshot{
-		VID:  "vid-" + uuid.New().String(),
-		Node: n,
-	}
-	if n.Graph != nil {
-		g := n.Graph.ToSnapshot()
-		nodeSnapshot.Graph = &g
-	}
-	return nodeSnapshot
+type PipeFlow struct {
+	Nodes []Node `json:"nodes,omitempty" yaml:"nodes,omitempty"` // the nodes of the pipe
+	Graph Graph  `json:"graph,omitempty" yaml:"graph,omitempty"` // the graph of the node
 }
 
-func (n Node) ToPipeCfg() PipeConfig {
-	return PipeConfig{
-		Node: n,
+func (n PipeFlow) Validate() error {
+	names := make(map[string]bool)
+	for _, node := range n.Nodes {
+		if names[node.MetaData.Name] {
+			return fmt.Errorf("duplicate node name: %s", node.MetaData.Name)
+		}
+		names[node.MetaData.Name] = true
+		if err := node.Validate(); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
+func (n PipeFlow) ToExec() PipeExec {
+	var res PipeExec
+	m := make(map[string]string)
+	for _, node := range n.Nodes {
+		snapshot := node.ToSnapshot()
+		res.Nodes = append(res.Nodes, snapshot)
+		m[snapshot.MetaData.UUID] = node.MetaData.RuntimeUUID
+	}
+	for _, vertex := range n.Graph.Vertexes {
+		vertex.RuntimeUUID = m[vertex.UUID]
+		res.Graph.Vertexes = append(res.Graph.Vertexes, vertex)
+	}
+	return res
+}
+
+func (n PipeFlow) ToPipeCfg() PipeConfig {
+	var res PipeConfig
+	m := make(map[string]string)
+	for _, node := range n.Nodes {
+		_copy := node
+		_copy.MetaData.UUID = uuid.New().String()
+		_copy.MetaData.RuntimeUUID = ""
+		res.Nodes = append(res.Nodes, _copy)
+		m[node.MetaData.Name] = _copy.MetaData.UUID
+	}
+	for _, vertex := range n.Graph.Vertexes {
+		vertex.UUID = m[vertex.Name]
+		res.Graph.Vertexes = append(res.Graph.Vertexes, vertex)
+	}
+	return res
+}
+
+// Reference is used to reference the node
+// must point to the node of compound kind
 type Reference struct {
-	Vid string `json:"vid" yaml:"vid"` // the vid of the pipe exec, from pipe exec
-	Id  string `json:"id" yaml:"id"`   // static pipe cfg id, from mongoDB auto generated
+	Vertex
 }
 
 type MetaData struct {
 	// Static config
+	UUID      string `json:"uuid" yaml:"uuid"` // static uuid
 	Name      string `json:"name" yaml:"name"`
 	Operation string `json:"operation" yaml:"operation"`
 	Namespace string `json:"namespace" yaml:"namespace"`
 	Desc      string `json:"desc" yaml:"desc"`
 
 	// Dynamic config
-	RuntimeUUID     string `json:"runtime_uuid" yaml:"runtime_uuid"` // the instance id of the pipe exec snapshot
+	RuntimeUUID     string `json:"runtime_uuid" yaml:"runtime_uuid"`
 	ResourceVersion uint64 `json:"resource_version" yaml:"resource_version"`
 
 	// Graph config
@@ -135,20 +184,14 @@ type Record struct {
 
 type Graph struct {
 	Edges     []Edge    `json:"edges,omitempty" yaml:"edges,omitempty"`
-	Vertexes  []Node    `json:"vertexes,omitempty" yaml:"vertexes,omitempty"`
+	Vertexes  []Vertex  `json:"vertexes,omitempty" yaml:"vertexes,omitempty"`
 	Reference Reference `json:"reference,omitempty" yaml:"reference,omitempty"`
 }
 
-func (g Graph) ToSnapshot() GraphSnapshot {
-	graphSnapshot := GraphSnapshot{
-		Edges:     g.Edges,
-		Vertexes:  make([]NodeSnapshot, len(g.Vertexes)),
-		Reference: g.Reference,
-	}
-	for i, vertex := range g.Vertexes {
-		graphSnapshot.Vertexes[i] = vertex.ToSnapshot()
-	}
-	return graphSnapshot
+type Vertex struct {
+	Name        string `json:"name" yaml:"name"`
+	UUID        string `json:"uuid" yaml:"uuid"` // static uuid
+	RuntimeUUID string `json:"runtime_uuid" yaml:"runtime_uuid"`
 }
 
 type Edge struct {

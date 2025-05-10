@@ -29,7 +29,7 @@ func GetOrchestrator(ctx context.Context) *Orchestrator {
 	return orca
 }
 
-func (o *Orchestrator) Schedule(pipe model.Node) error {
+func (o *Orchestrator) Schedule(pipe model.PipeFlow) error {
 	return nil
 }
 

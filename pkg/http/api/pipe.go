@@ -9,7 +9,7 @@ import (
 )
 
 func CreatePipe(c *gin.Context) {
-	var n model.Node
+	var n model.PipeFlow
 	err := utils.BindFlow(&n, c.ShouldBindYAML)
 	if err != nil {
 		utils.ResponseError(c, err)
