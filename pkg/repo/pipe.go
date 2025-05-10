@@ -11,9 +11,10 @@ import (
 var PipeRepo Pipe
 
 const (
-	PipeCfgCollection  = "pipe_cfg"
-	PipeExecCollection = "pipe_exec"
-	PipeDBName         = "pipe"
+	PipeCfgCollection      = "pipe_cfg"
+	PipeExecCollection     = "pipe_exec"
+	NodeSnapshotCollection = "node_snapshot"
+	PipeDBName             = "pipe"
 
 	NebulaPipeExecSpace     = "pipe_exec"
 	NebulaPipeExecBasicTag  = "pipe_exec_basic_tag"
@@ -46,6 +47,12 @@ func (p Pipe) CreatePipeExec(ctx context.Context, exec *model.PipeExec) (id inte
 	res, err := db.InsertOne(ctx, exec)
 	id = res.InsertedID
 	return id, err
+}
+
+func (p Pipe) BatchCreateNodeSnapshot(ctx context.Context, nodes []interface{}) (ids []interface{}, err error) {
+	db := mongoDB.AssignDB(PipeDBName, NodeSnapshotCollection)
+	res, err := db.InsertMany(ctx, nodes)
+	return res.InsertedIDs, err
 }
 
 func (p Pipe) CreatePipeExecVertex(vertex interface{}, ifNotExist ...bool) error {

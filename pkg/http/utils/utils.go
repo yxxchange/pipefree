@@ -3,11 +3,14 @@ package utils
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/yxxchange/pipefree/pkg/http"
 	"time"
 )
 
 type Code string
+
+const (
+	MetricTimeKey = "http::api::start"
+)
 
 const (
 	CodeSuccess Code = "0"
@@ -62,7 +65,7 @@ func ResponseErrorWithCode(ctx *gin.Context, code Code, err error) {
 }
 
 func calculateCost(ctx *gin.Context) string {
-	v, ok := ctx.Get(http.MetricTimeKey)
+	v, ok := ctx.Get(MetricTimeKey)
 	if !ok {
 		return ""
 	}

@@ -50,12 +50,16 @@ func (n Node) ToPipeCfg() PipeConfig {
 	}
 }
 
+type Reference struct {
+	Vid string `json:"vid" yaml:"vid"` // the vid of the pipe exec, from pipe exec
+	Id  string `json:"id" yaml:"id"`   // static pipe cfg id, from mongoDB auto generated
+}
+
 type MetaData struct {
 	// Static config
 	Name      string `json:"name" yaml:"name"`
 	Operation string `json:"operation" yaml:"operation"`
-	Space     string `json:"space" yaml:"space"`
-	Tag       string `json:"tag" yaml:"tag"`
+	Namespace string `json:"namespace" yaml:"namespace"`
 	Desc      string `json:"desc" yaml:"desc"`
 
 	// Dynamic config
@@ -64,24 +68,23 @@ type MetaData struct {
 
 	// Graph config
 	// the graph config is used to build the graph of the node
-	Ancestor *MetaData            `json:"ancestor" yaml:"ancestor"` // the ancestor of the node
-	From     map[string]*MetaData `json:"predecessor" yaml:"predecessor"`
-	To       map[string]*MetaData `json:"successor" yaml:"successor"`
+	Ancestor *MetaData            `json:"-" yaml:"-"` // the ancestor of the node
+	From     map[string]*MetaData `json:"-" yaml:"-"`
+	To       map[string]*MetaData `json:"-" yaml:"-"`
 }
 
 // NodeIdentifier means that node can be processed by which engine
 // TODO: engine need to subscribe the pipe
 type NodeIdentifier struct {
 	ApiVersion string `json:"apiVersion"`
-	Space      string `json:"space"`
-	Tag        string `json:"tag"`
+	Namespace  string `json:"namespace"`
 	Kind       Kind   `json:"kind"`
 	Operation  string `json:"operation"`
 }
 
 func (n NodeIdentifier) Identifier() string {
 	// apiVersion/space/tag/kind/operation
-	return fmt.Sprintf("/%s/%s/%s/%s/%s", n.ApiVersion, n.Space, n.Tag, n.Kind, n.Operation)
+	return fmt.Sprintf("/%s/%s/%s/%s", n.ApiVersion, n.Namespace, n.Kind, n.Operation)
 }
 
 func (m *MetaData) GetPredecessor() map[string]*MetaData {
@@ -131,9 +134,9 @@ type Record struct {
 }
 
 type Graph struct {
-	Edges     []Edge   `json:"edges,omitempty" yaml:"edges,omitempty"`
-	Vertexes  []Node   `json:"vertexes,omitempty" yaml:"vertexes,omitempty"`
-	Reference MetaData `json:"reference,omitempty" yaml:"reference,omitempty"`
+	Edges     []Edge    `json:"edges,omitempty" yaml:"edges,omitempty"`
+	Vertexes  []Node    `json:"vertexes,omitempty" yaml:"vertexes,omitempty"`
+	Reference Reference `json:"reference,omitempty" yaml:"reference,omitempty"`
 }
 
 func (g Graph) ToSnapshot() GraphSnapshot {

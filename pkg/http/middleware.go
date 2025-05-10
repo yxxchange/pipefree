@@ -2,14 +2,11 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/yxxchange/pipefree/pkg/http/utils"
 	"time"
 )
 
-const (
-	MetricTimeKey = "http::api::start"
-)
-
 func MetricTimeCost(ctx *gin.Context) {
-	ctx.Set(MetricTimeKey, time.Now())
+	ctx.Set(utils.MetricTimeKey, time.Now())
 	ctx.Next()
 }

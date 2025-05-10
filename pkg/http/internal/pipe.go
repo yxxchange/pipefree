@@ -36,30 +36,40 @@ func RunPipe(ctx context.Context, id string) error {
 	}
 	pipeExec := pipe.ToPipeExec()
 	// 1. store exec doc to mongoDB for persistence
-	// 2. store exec node and edge to nebula for quick query
-	// 3. find the root node and put to etcd for orchestration
+	// 2. store exec node snapshot to mongoDB for quick query
+	// 3. store exec node and edge to nebula for quick query
+	// 4. find the root node and put to etcd for orchestration
+	// step 1
 	execId, err := repo.PipeRepo.CreatePipeExec(ctx, &pipeExec)
 	if err != nil {
 		log.Errorf("create pipe exec error: %v", err)
 		return err
 	}
 	log.Infof("create pipe exec: %v", execId)
-	graph := pipeExec.ToGraph()
-	for _, vertex := range graph.Vertexes {
+	// step 2
+	pipeFragment := pipeExec.Decompose()
+	_, err = repo.PipeRepo.BatchCreateNodeSnapshot(ctx, pipeFragment.NodeSnapshots)
+	if err != nil {
+		log.Errorf("create pipe exec node snapshot error: %v", err)
+		return err
+	}
+	// step 3
+	for _, vertex := range pipeFragment.Vertexes {
 		err = repo.PipeRepo.CreatePipeExecVertex(vertex, true)
 		if err != nil {
 			log.Errorf("create pipe exec vertex error: %v", err)
 			return err
 		}
 	}
-	for _, edge := range graph.Edges {
+	for _, edge := range pipeFragment.Edges {
 		err = repo.PipeRepo.CreatePipeExecEdge(edge, true)
 		if err != nil {
 			log.Errorf("create pipe exec edge error: %v", err)
 			return err
 		}
 	}
-	origin, err := findTheOrigin(pipeExec, graph)
+	// step 4
+	origin, err := findTheOrigin(pipeExec, pipeFragment)
 	if err != nil {
 		return err
 	}
@@ -68,6 +78,7 @@ func RunPipe(ctx context.Context, id string) error {
 		log.Errorf("put origin to etcd error: %v", err)
 		return err
 	}
+	// TODO： update runtime uuid and resource version
 	return nil
 }
 
@@ -76,7 +87,7 @@ func validatePipe(pipe model.PipeConfig) error {
 	return err
 }
 
-func findTheOrigin(pipe model.PipeExec, graph model.GraphMeta) (model.NodeBasicTag, error) {
+func findTheOrigin(pipe model.PipeExec, graph model.PipeFragment) (model.NodeBasicTag, error) {
 	rootVid := pipe.VID
 	// 99.999999% of the time, the root node is the first node in the graph
 	for _, vertex := range graph.Vertexes {

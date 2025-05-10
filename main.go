@@ -1,8 +1,9 @@
-package pipefree
+package main
 
 import (
 	"flag"
 	"github.com/yxxchange/pipefree/config"
+	"github.com/yxxchange/pipefree/pkg/http"
 	"github.com/yxxchange/pipefree/pkg/infra"
 )
 
@@ -14,6 +15,7 @@ func main() {
 	infra.Init()
 	defer infra.Close()
 	// TODO： Add your main logic here
+	http.Launch()
 }
 
 func initFlag() {

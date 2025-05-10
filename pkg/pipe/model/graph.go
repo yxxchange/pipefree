@@ -7,9 +7,10 @@ const (
 	BasicEdgeName = "pipe_node_basic_edge"
 )
 
-type GraphMeta struct {
-	Vertexes []NodeBasicTag
-	Edges    []BasicEdge
+type PipeFragment struct {
+	Vertexes      []NodeBasicTag
+	Edges         []BasicEdge
+	NodeSnapshots []interface{}
 }
 
 type NodeBasicTag struct {
@@ -26,8 +27,7 @@ func (n NodeBasicTag) ToIdentifier() NodeIdentifier {
 	return NodeIdentifier{
 		ApiVersion: n.ApiVersion,
 		Kind:       Kind(n.Kind),
-		Space:      meta.Space,
-		Tag:        meta.Tag,
+		Namespace:  meta.Namespace,
 		Operation:  meta.Operation,
 	}
 }
