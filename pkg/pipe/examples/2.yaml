@@ -5,6 +5,7 @@ nodes:
       name: NodeA
       namespace: default
       desc: Root node of the topology
+      operation: package
     spec:
       rawMessage: '{"type": "simple", "timeout": "30s"}'
       env:
@@ -17,6 +18,7 @@ nodes:
     metadata:
       name: NodeB
       namespace: default
+      operation: build-image
       desc: Parallel processing node
     spec:
       rawMessage: '{"worker": "dataProcessor", "timeout": "45s"}'
@@ -30,6 +32,7 @@ nodes:
     metadata:
       name: NodeC
       namespace: default
+      operation: security-check
       desc: Parallel validation node
     spec:
       rawMessage: '{"worker": "validator", "timeout": "20s"}'
@@ -43,6 +46,7 @@ nodes:
     metadata:
       name: NodeD
       namespace: default
+      operation: deploy
       desc: Data aggregation node
     spec:
       rawMessage: '{"aggregator": "sum", "window": "5m"}'
@@ -56,6 +60,7 @@ nodes:
     metadata:
       name: NodeE
       namespace: default
+      operation: notify
       desc: Final output node
     spec:
       rawMessage: '{"output": "complete", "status": "success"}'

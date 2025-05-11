@@ -38,11 +38,12 @@ etcd:
 
 nebula:
   address:
-    - 172.25.144.171:9669
+    - localhost:62186
   username: root
   password: <none>
   spaces:
     - test
+    - pipe_exec
   sessionConfig:
     maxConnSize: 100
     minConnSize: 30
@@ -51,7 +52,7 @@ nebula:
     useHttp2: false
 
 mongoDB:
-    uri: mongodb://172.25.144.171:27017
+    uri: mongodb://localhost:27017
     username: root
     password: <none>
     database: pipeFree

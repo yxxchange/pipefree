@@ -13,11 +13,6 @@ func TestGraphParser(t *testing.T) {
 	path := "../examples/2.yaml"
 	// path := "../examples/3.yaml"
 	// path := "../examples/4.yaml"
-	file, err := os.Open(path)
-	if err != nil {
-		t.Fatalf("failed to open file: %v", err)
-	}
-	defer file.Close()
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("failed to read file: %v", err)

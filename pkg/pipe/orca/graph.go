@@ -97,7 +97,7 @@ func (t *GraphParser) parse(pipe model.PipeFlow) {
 		t.Err = ErrorEmpty
 	}
 	cnt := 0
-	for _, node := range t.List {
+	for _, node := range t.backup {
 		if node.InDegree == 0 {
 			cnt++
 		}

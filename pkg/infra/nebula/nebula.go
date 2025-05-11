@@ -35,15 +35,6 @@ func initNebula() {
 	}
 }
 
-func open(user, passwd, space string) error {
-	_, ok := pool.Get(space)
-	if !ok {
-		_, err := pool.open(space, user, passwd)
-		return err
-	}
-	return nil
-}
-
 func Use(space string) *nebulaorm.DB {
 	session, ok := pool.Get(space)
 	if !ok {

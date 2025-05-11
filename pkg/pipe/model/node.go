@@ -128,14 +128,18 @@ func (n PipeFlow) ValidateDynamicCfg() error {
 
 func (n PipeFlow) ToExec() PipeExec {
 	var res PipeExec
-	m := make(map[string]string)
+	m := make(map[string]string) // name: runtime_uuid
 	for _, node := range n.Nodes {
 		snapshot := node.ToSnapshot()
 		res.Nodes = append(res.Nodes, snapshot)
-		m[snapshot.MetaData.UUID] = node.MetaData.RuntimeUUID
+		m[snapshot.MetaData.Name] = snapshot.MetaData.RuntimeUUID
 	}
-	for _, vertex := range n.Graph.Vertexes {
-		vertex.RuntimeUUID = m[vertex.UUID]
+	for _, node := range res.Nodes {
+		vertex := Vertex{
+			Name:        node.MetaData.Name,
+			UUID:        node.MetaData.UUID,
+			RuntimeUUID: node.MetaData.RuntimeUUID,
+		}
 		res.Graph.Vertexes = append(res.Graph.Vertexes, vertex)
 	}
 	for _, edge := range n.Graph.Edges {
@@ -161,6 +165,8 @@ func (n PipeFlow) ToPipeCfg() PipeConfig {
 		vertex.UUID = m[vertex.Name]
 		res.Graph.Vertexes = append(res.Graph.Vertexes, vertex)
 	}
+	res.Graph.Edges = n.Graph.Edges
+	res.Graph.Reference = n.Graph.Reference
 	return res
 }
 

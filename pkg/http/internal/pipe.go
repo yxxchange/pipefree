@@ -48,7 +48,7 @@ func RunPipe(ctx context.Context, id string) error {
 		return err
 	}
 	parser := orca.NewGraphParser()
-	err = parser.Parse(pipe.PipeFlow).IsValid()
+	err = parser.Parse(pipeExec.PipeFlow).IsValid()
 	if err != nil {
 		log.Errorf("validate graph error: %v", err)
 		return err

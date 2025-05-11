@@ -6,6 +6,7 @@ import (
 	"github.com/yxxchange/pipefree/pkg/infra/nebula"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var PipeRepo Pipe
@@ -16,9 +17,7 @@ const (
 	NodeSnapshotCollection = "node_snapshot"
 	PipeDBName             = "pipe"
 
-	NebulaPipeExecSpace     = "pipe_exec"
-	NebulaPipeExecBasicTag  = "pipe_exec_basic_tag"
-	NebulaPipeExecBasicEdge = "pipe_exec_basic_edge"
+	NebulaPipeExecSpace = "pipe_exec"
 )
 
 type Pipe struct{}
@@ -32,7 +31,11 @@ func (p Pipe) CreatePipeCfg(ctx context.Context, pipe *model.PipeConfig) (id int
 
 func (p Pipe) GetPipeCfg(ctx context.Context, id string) (pipe model.PipeConfig, err error) {
 	db := mongoDB.AssignDB(PipeDBName, PipeCfgCollection)
-	err = db.FindOne(ctx, bson.M{"_id": id}).Decode(&pipe)
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return
+	}
+	err = db.FindOne(ctx, bson.M{"_id": objectID}).Decode(&pipe)
 	return pipe, err
 }
 
