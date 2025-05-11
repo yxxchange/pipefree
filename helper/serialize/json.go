@@ -7,5 +7,5 @@ func JsonSerialize(obj interface{}) ([]byte, error) {
 }
 
 func JsonDeserialize(b []byte, obj interface{}) error {
-	return json.Unmarshal(b, &obj)
+	return json.Unmarshal(b, obj)
 }

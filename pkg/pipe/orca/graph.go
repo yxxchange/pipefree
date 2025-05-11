@@ -39,8 +39,9 @@ func (t *TopologyNodes) Pop() any {
 }
 
 type GraphParser struct {
-	Map  map[string]*TopologyNode
-	List TopologyNodes
+	Map    map[string]*TopologyNode
+	List   TopologyNodes
+	backup TopologyNodes
 
 	Err error
 
@@ -51,6 +52,7 @@ func NewGraphParser() *GraphParser {
 	return &GraphParser{}
 }
 
+// Parse before calling this method, you must ensure that pipe has been prepared
 func (t *GraphParser) Parse(pipe model.PipeFlow) *GraphParser {
 	t.parsed = true
 	t.Map = make(map[string]*TopologyNode)
@@ -63,7 +65,7 @@ func (t *GraphParser) FindTheOrigin() (model.Node, error) {
 	if !t.parsed {
 		return model.Node{}, fmt.Errorf("graph not parsed")
 	}
-	for _, node := range t.List {
+	for _, node := range t.backup {
 		if node.InDegree == 0 {
 			return node.Node, nil
 		}
@@ -85,8 +87,11 @@ func (t *GraphParser) parse(pipe model.PipeFlow) {
 		toNode := t.Map[edge.To]
 		if fromNode == nil || toNode == nil {
 			t.Err = ErrorInvalidEdge
+			return
 		}
 		toNode.InDegree++
+		fromNode.AddToNode(&toNode.MetaData)
+		toNode.AddFromNode(&fromNode.MetaData)
 	}
 	if len(t.List) == 0 {
 		t.Err = ErrorEmpty
@@ -99,8 +104,10 @@ func (t *GraphParser) parse(pipe model.PipeFlow) {
 	}
 	if cnt > 1 {
 		t.Err = ErrorOriginMustOne
+		return
 	}
-	t.Err = nil
+	t.backup = make(TopologyNodes, len(t.List))
+	copy(t.backup, t.List)
 }
 
 func (t *GraphParser) IsValid() error {
@@ -111,6 +118,9 @@ func (t *GraphParser) IsValid() error {
 }
 
 func (t *GraphParser) sort() error {
+	if t.Err != nil {
+		return t.Err
+	}
 	heap.Init(&t.List)
 	if len(t.List) == 0 {
 		return ErrorEmpty
@@ -123,10 +133,8 @@ func (t *GraphParser) sort() error {
 		for _, nextMeta := range node.Node.MetaData.To {
 			nextNode := t.Map[nextMeta.Name]
 			nextNode.InDegree--
-			if nextNode.InDegree == 0 {
-				heap.Push(&t.List, nextNode)
-			}
 		}
+		heap.Init(&t.List)
 	}
 	return nil
 }

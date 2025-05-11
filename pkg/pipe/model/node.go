@@ -46,6 +46,22 @@ func (n Node) Validate() error {
 	return nil
 }
 
+func (n *Node) AddToNode(meta *MetaData) {
+	if n.MetaData.To == nil {
+		n.MetaData.To = make(map[string]*MetaData)
+	}
+	n.MetaData.To[meta.Name] = meta
+	return
+}
+
+func (n *Node) AddFromNode(meta *MetaData) {
+	if n.MetaData.From == nil {
+		n.MetaData.From = make(map[string]*MetaData)
+	}
+	n.MetaData.From[meta.Name] = meta
+	return
+}
+
 func (n Node) ToIdentifier() NodeIdentifier {
 	return NodeIdentifier{
 		ApiVersion: n.ApiVersion,

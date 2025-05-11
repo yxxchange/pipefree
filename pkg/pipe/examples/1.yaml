@@ -1,16 +1,20 @@
-apiVersion: v1
-kind: compound
-metadata:
-  name: NodeA
-  operation: pipeLaunch
-  namespace: default
-  desc: Root node of the topology
-spec:
-  rawMessage: '{"type": "simple", "timeout": "30s"}'
-env:
-  keyValues:
-    max_retry: 3
-    log_level: debug
+## This is an error example
+## edge invalid
+nodes:
+  - apiVersion: v1
+    kind: compound
+    metadata:
+      name: NodeA
+      operation: pipeLaunch
+      namespace: default
+      desc: Root node of the topology
+    spec:
+      rawMessage: '{"type": "simple", "timeout": "30s"}'
+    env:
+      keyValues:
+        max_retry: 3
+        log_level: debug
+
 graph: # NodeA contains a subgraph
   edges:
     - from: NodeA
@@ -20,3 +24,6 @@ graph: # NodeA contains a subgraph
     - from: NodeB
       to: NodeD
     - from: NodeC
+      to: NodeD
+    - from: NodeD
+      to: NodeE

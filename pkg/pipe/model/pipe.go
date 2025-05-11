@@ -1,7 +1,7 @@
 package model
 
 type PipeConfig struct {
-	PipeFlow
+	PipeFlow `json:",inline" yaml:",inline"`
 }
 
 func (p PipeConfig) ToPipeExec() PipeExec {
@@ -9,5 +9,5 @@ func (p PipeConfig) ToPipeExec() PipeExec {
 }
 
 type PipeExec struct {
-	PipeFlow
+	PipeFlow `json:",inline" yaml:",inline"`
 }

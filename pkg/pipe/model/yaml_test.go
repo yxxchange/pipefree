@@ -2,13 +2,15 @@ package model
 
 import (
 	"fmt"
+	"github.com/yxxchange/pipefree/helper/serialize"
 	"gopkg.in/yaml.v3"
 	"os"
 	"testing"
 )
 
 func Test_Deserialize(t *testing.T) {
-	path := "../examples/1.yaml"
+	// path := "../examples/1.yaml"
+	path := "../examples/2.yaml"
 	file, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("failed to open file: %v", err)
@@ -18,13 +20,13 @@ func Test_Deserialize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read file: %v", err)
 	}
-	var node Node
-	err = yaml.Unmarshal(raw, &node)
+	var pipe PipeFlow
+	err = serialize.YamlDeserialize(raw, &pipe)
 	if err != nil {
 		t.Fatalf("failed to unmarshal json: %v", err)
 	}
-	fmt.Printf("node: %+v\n", node)
-	b, err := yaml.Marshal(node)
+	fmt.Printf("pipe: %+v\n", pipe)
+	b, err := yaml.Marshal(pipe)
 	if err != nil {
 		t.Fatalf("failed to marshal json: %v", err)
 	}

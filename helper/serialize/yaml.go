@@ -7,5 +7,5 @@ func YamlSerialize(obj interface{}) ([]byte, error) {
 }
 
 func YamlDeserialize(b []byte, obj interface{}) error {
-	return yaml.Unmarshal(b, &obj)
+	return yaml.Unmarshal(b, obj)
 }

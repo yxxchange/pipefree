@@ -1,0 +1,78 @@
+nodes:
+  - apiVersion: v1
+    kind: compound
+    metadata:
+      name: NodeA
+      namespace: default
+      desc: Root node of the topology
+    spec:
+      rawMessage: '{"type": "simple", "timeout": "30s"}'
+      env:
+        keyValues:
+          max_retry: 3
+          log_level: debug
+
+  - apiVersion: v1
+    kind: scalar
+    metadata:
+      name: NodeB
+      namespace: default
+      desc: Parallel processing node
+    spec:
+      rawMessage: '{"worker": "dataProcessor", "timeout": "45s"}'
+      env:
+        keyValues:
+          retry_delay: 5s
+          output_format: json
+
+  - apiVersion: v1
+    kind: scalar
+    metadata:
+      name: NodeC
+      namespace: default
+      desc: Parallel validation node
+    spec:
+      rawMessage: '{"worker": "validator", "timeout": "20s"}'
+      env:
+        keyValues:
+          validation_mode: strict
+          alert_threshold: 80
+
+  - apiVersion: v1
+    kind: scalar
+    metadata:
+      name: NodeD
+      namespace: default
+      desc: Data aggregation node
+    spec:
+      rawMessage: '{"aggregator": "sum", "window": "5m"}'
+      env:
+        keyValues:
+          batch_size: 100
+          flush_timeout: 10s
+
+  - apiVersion: v1
+    kind: scalar
+    metadata:
+      name: NodeE
+      namespace: default
+      desc: Final output node
+    spec:
+      rawMessage: '{"output": "complete", "status": "success"}'
+      env:
+        keyValues:
+          notify_on_complete: true
+          retention_days: 7
+
+graph:
+  edges:
+    - from: NodeA
+      to: NodeB
+    - from: NodeA
+      to: NodeC
+    - from: NodeB
+      to: NodeD
+    - from: NodeC
+      to: NodeD
+    - from: NodeD
+      to: NodeE
