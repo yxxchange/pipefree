@@ -49,12 +49,6 @@ func (p Pipe) CreatePipeExec(ctx context.Context, exec *model.PipeExec) (id inte
 	return id, err
 }
 
-func (p Pipe) BatchCreateNodeSnapshot(ctx context.Context, nodes []interface{}) (ids []interface{}, err error) {
-	db := mongoDB.AssignDB(PipeDBName, NodeSnapshotCollection)
-	res, err := db.InsertMany(ctx, nodes)
-	return res.InsertedIDs, err
-}
-
 func (p Pipe) CreatePipeExecVertex(vertex interface{}, ifNotExist ...bool) error {
 	return nebula.Use(NebulaPipeExecSpace).InsertVertex(vertex, ifNotExist...).Exec()
 }

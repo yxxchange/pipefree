@@ -3,7 +3,6 @@ package orca
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"sync"
 )
@@ -30,17 +29,5 @@ func GetOrchestrator(ctx context.Context) *Orchestrator {
 }
 
 func (o *Orchestrator) Schedule(pipe model.PipeFlow) error {
-	return nil
-}
-
-func (o *Orchestrator) Create(raw string) error {
-	vertexes, err := NewGraphBuilder().ProcessYaml(raw).ProcessGraph().Build()
-	if err != nil {
-		return fmt.Errorf("create pipe error: %v", err)
-	}
-	if len(vertexes) == 0 {
-		return fmt.Errorf("pipe is empty")
-	}
-	// todo: sql
 	return nil
 }

@@ -4,15 +4,16 @@ import (
 	"container/heap"
 	"errors"
 	"fmt"
-	"github.com/yxxchange/pipefree/helper/serialize"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 )
 
 type TopologyNodes []*TopologyNode
 
 var (
-	ErrorCycle = errors.New("graph has a cycle")
-	ErrorEmpty = errors.New("graph is empty")
+	ErrorCycle         = errors.New("graph has a cycle")
+	ErrorEmpty         = errors.New("graph is empty")
+	ErrorInvalidEdge   = errors.New("graph edge is invalid")
+	ErrorOriginMustOne = errors.New("the number of origin node must be one")
 )
 
 func (t TopologyNodes) Len() int {
@@ -37,93 +38,87 @@ func (t *TopologyNodes) Pop() any {
 	return x
 }
 
-type GraphBuilder struct {
-	Node     model.PipeFlow
-	Map      map[string]*TopologyNode
-	List     TopologyNodes
-	Vertexes []*model.Node
-
-	nameCollector  map[string]struct{}
-	spaceCollector map[string]struct{}
-	tagCollector   map[string]struct{}
+type GraphParser struct {
+	Map  map[string]*TopologyNode
+	List TopologyNodes
 
 	Err error
+
+	parsed bool
 }
 
-func NewGraphBuilder() *GraphBuilder {
-	return &GraphBuilder{
-		nameCollector:  make(map[string]struct{}),
-		spaceCollector: make(map[string]struct{}),
-		tagCollector:   make(map[string]struct{}),
-	}
+func NewGraphParser() *GraphParser {
+	return &GraphParser{}
 }
 
-func (t *GraphBuilder) Build() ([]*model.Node, error) {
-	if t.Err != nil {
-		return nil, t.Err
-	}
-	var vertexes []*model.Node
-	for _, topo := range t.List {
-		vertexes = append(vertexes, topo.Node)
-	}
-	return vertexes, nil
-}
-
-func (t *GraphBuilder) ProcessPipeCfg(pipe model.PipeConfig) *GraphBuilder {
-	if t.Err != nil {
-		return t
-	}
-	t.Node = pipe.PipeFlow
-	if len(t.spaceCollector) > 1 {
-		t.Err = fmt.Errorf("only one space is allowed, but got %d", len(t.spaceCollector))
-		return t
-	}
-	if len(t.tagCollector) > 1 {
-		t.Err = fmt.Errorf("only one tag is allowed, but got %d", len(t.tagCollector))
-		return t
-	}
+func (t *GraphParser) Parse(pipe model.PipeFlow) *GraphParser {
+	t.parsed = true
+	t.Map = make(map[string]*TopologyNode)
+	t.List = make(TopologyNodes, 0)
+	t.parse(pipe)
 	return t
 }
 
-func (t *GraphBuilder) ProcessYaml(raw string) *GraphBuilder {
-	if t.Err != nil {
-		return t
+func (t *GraphParser) FindTheOrigin() (model.Node, error) {
+	if !t.parsed {
+		return model.Node{}, fmt.Errorf("graph not parsed")
 	}
-	var nodeView model.PipeFlow
-	if err := serialize.YamlDeserialize([]byte(raw), &nodeView); err != nil {
-		t.Err = fmt.Errorf("deserialize pipe error: %v", err)
-		return t
+	for _, node := range t.List {
+		if node.InDegree == 0 {
+			return node.Node, nil
+		}
 	}
-	t.Node = nodeView
-	if len(t.spaceCollector) > 1 {
-		t.Err = fmt.Errorf("only one space is allowed, but got %d", len(t.spaceCollector))
-		return t
-	}
-	if len(t.tagCollector) > 1 {
-		t.Err = fmt.Errorf("only one tag is allowed, but got %d", len(t.tagCollector))
-		return t
-	}
-	return t
+	return model.Node{}, ErrorOriginMustOne
 }
 
-func (t *GraphBuilder) ProcessGraph() *GraphBuilder {
-	if t.Err != nil {
-		return t
+func (t *GraphParser) parse(pipe model.PipeFlow) {
+	for _, node := range pipe.Nodes {
+		topoNode := &TopologyNode{
+			Node:     node,
+			InDegree: 0,
+		}
+		t.List = append(t.List, topoNode)
+		t.Map[node.MetaData.Name] = topoNode
 	}
-	// todo
+	for _, edge := range pipe.Graph.Edges {
+		fromNode := t.Map[edge.From]
+		toNode := t.Map[edge.To]
+		if fromNode == nil || toNode == nil {
+			t.Err = ErrorInvalidEdge
+		}
+		toNode.InDegree++
+	}
+	if len(t.List) == 0 {
+		t.Err = ErrorEmpty
+	}
+	cnt := 0
+	for _, node := range t.List {
+		if node.InDegree == 0 {
+			cnt++
+		}
+	}
+	if cnt > 1 {
+		t.Err = ErrorOriginMustOne
+	}
+	t.Err = nil
+}
+
+func (t *GraphParser) IsValid() error {
+	if !t.parsed {
+		return fmt.Errorf("graph not parsed")
+	}
 	return t.sort()
 }
 
-func (t *GraphBuilder) sort() *GraphBuilder {
-	if t.Err != nil {
-		return t
-	}
+func (t *GraphParser) sort() error {
 	heap.Init(&t.List)
+	if len(t.List) == 0 {
+		return ErrorEmpty
+	}
 	for len(t.List) > 0 {
 		node := heap.Pop(&t.List).(*TopologyNode)
 		if node.InDegree != 0 {
-			t.Err = ErrorCycle
-			return t
+			return ErrorCycle
 		}
 		for _, nextMeta := range node.Node.MetaData.To {
 			nextNode := t.Map[nextMeta.Name]
@@ -133,11 +128,10 @@ func (t *GraphBuilder) sort() *GraphBuilder {
 			}
 		}
 	}
-	return t
+	return nil
 }
 
 type TopologyNode struct {
-	// Node is the node of the orca
-	Node     *model.Node `json:"node"`
-	InDegree int         `json:"inDegree"`
+	model.Node `json:"node"`
+	InDegree   int `json:"inDegree"`
 }

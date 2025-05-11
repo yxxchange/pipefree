@@ -16,6 +16,14 @@ type Node struct {
 	Status     Status   `json:"status" yaml:"status"`
 }
 
+func (n Node) ToString() string {
+	b, err := serialize.JsonSerialize(n)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
 func (n Node) Validate() error {
 	if n.ApiVersion == "" {
 		return fmt.Errorf("apiVersion is required")
@@ -26,23 +34,32 @@ func (n Node) Validate() error {
 	if n.MetaData.Name == "" {
 		return fmt.Errorf("name is required")
 	}
-
+	if n.MetaData.Namespace == "" {
+		return fmt.Errorf("namespace is required")
+	}
+	if n.MetaData.Operation == "" {
+		return fmt.Errorf("operation is required")
+	}
+	if n.MetaData.UUID == "" {
+		return fmt.Errorf("uuid is required")
+	}
 	return nil
 }
 
-func (n Node) ToBasicTag() NodeBasicTag {
-	b1, _ := serialize.JsonSerialize(n.MetaData)
-	b2, _ := serialize.JsonSerialize(n.Spec)
-	return NodeBasicTag{
+func (n Node) ToIdentifier() NodeIdentifier {
+	return NodeIdentifier{
 		ApiVersion: n.ApiVersion,
-		Kind:       string(n.Kind),
-		MetaData:   string(b1),
-		Spec:       string(b2),
+		Namespace:  n.MetaData.Namespace,
+		Kind:       n.Kind,
+		Operation:  n.MetaData.Operation,
 	}
 }
 
 func (n Node) ToSnapshot() Node {
-	n.MetaData.RuntimeUUID = uuid.New().String()
+	if n.Status.Phase == "" {
+		n.MetaData.RuntimeUUID = uuid.New().String()
+		n.Status.Phase = PhaseReady
+	}
 	return n
 }
 
@@ -51,8 +68,9 @@ type PipeFlow struct {
 	Graph Graph  `json:"graph,omitempty" yaml:"graph,omitempty"` // the graph of the node
 }
 
-func (n PipeFlow) Validate() error {
+func (n PipeFlow) ValidateStaticCfg() error {
 	names := make(map[string]bool)
+	namespace := make(map[string]bool)
 	for _, node := range n.Nodes {
 		if names[node.MetaData.Name] {
 			return fmt.Errorf("duplicate node name: %s", node.MetaData.Name)
@@ -60,6 +78,33 @@ func (n PipeFlow) Validate() error {
 		names[node.MetaData.Name] = true
 		if err := node.Validate(); err != nil {
 			return err
+		}
+		namespace[node.MetaData.Namespace] = true
+	}
+	if len(namespace) > 1 {
+		return fmt.Errorf("namespace is not same")
+	}
+	for _, vertex := range n.Graph.Vertexes {
+		if vertex.UUID == "" {
+			return fmt.Errorf("vertex uuid is required")
+		}
+	}
+
+	return nil
+}
+
+func (n PipeFlow) ValidateDynamicCfg() error {
+	for _, edge := range n.Graph.Edges {
+		if edge.SrcUUID == "" || edge.DstUUID == "" {
+			return fmt.Errorf("edge src or dst uuid is empty")
+		}
+	}
+	for _, vertex := range n.Graph.Vertexes {
+		if vertex.UUID == "" {
+			return fmt.Errorf("vertex uuid is empty")
+		}
+		if vertex.RuntimeUUID == "" {
+			return fmt.Errorf("vertex runtime uuid is empty")
 		}
 	}
 	return nil
@@ -77,6 +122,12 @@ func (n PipeFlow) ToExec() PipeExec {
 		vertex.RuntimeUUID = m[vertex.UUID]
 		res.Graph.Vertexes = append(res.Graph.Vertexes, vertex)
 	}
+	for _, edge := range n.Graph.Edges {
+		edge.SrcUUID = m[edge.From]
+		edge.DstUUID = m[edge.To]
+		res.Graph.Edges = append(res.Graph.Edges, edge)
+	}
+
 	return res
 }
 
@@ -186,17 +237,6 @@ type Graph struct {
 	Edges     []Edge    `json:"edges,omitempty" yaml:"edges,omitempty"`
 	Vertexes  []Vertex  `json:"vertexes,omitempty" yaml:"vertexes,omitempty"`
 	Reference Reference `json:"reference,omitempty" yaml:"reference,omitempty"`
-}
-
-type Vertex struct {
-	Name        string `json:"name" yaml:"name"`
-	UUID        string `json:"uuid" yaml:"uuid"` // static uuid
-	RuntimeUUID string `json:"runtime_uuid" yaml:"runtime_uuid"`
-}
-
-type Edge struct {
-	From string `json:"from" yaml:"from"`
-	To   string `json:"to" yaml:"to"`
 }
 
 type Env struct {
