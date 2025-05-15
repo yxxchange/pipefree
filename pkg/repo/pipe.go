@@ -53,9 +53,15 @@ func (p Pipe) CreatePipeExec(ctx context.Context, exec *model.PipeExec) (id inte
 }
 
 func (p Pipe) CreatePipeExecVertex(vertex interface{}, ifNotExist ...bool) error {
-	return nebula.Use(NebulaPipeExecSpace).InsertVertex(vertex, ifNotExist...).Exec()
+	return nebula.Use(NebulaPipeExecSpace).ExecuteWithParameter()
 }
 
 func (p Pipe) CreatePipeExecEdge(edge interface{}, ifNotExist ...bool) error {
 	return nebula.Use(NebulaPipeExecSpace).InsertEdge(edge, ifNotExist...).Exec()
+}
+
+func (p Pipe) FindReachableVertex(cur model.Vertex) (bool, error) {
+	sql := `MATCH (v:pipe_exec_basic_tag {runtime_uuid: $uuid})-->(n) RETURN n`
+
+	nebula.Use(NebulaPipeExecSpace).Raw().Exec()
 }

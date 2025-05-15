@@ -2,12 +2,13 @@ package nebula
 
 import (
 	"fmt"
-	"github.com/haysons/nebulaorm"
 	"github.com/spf13/viper"
+	nebula_go "github.com/vesoft-inc/nebula-go/v3"
 	"github.com/yxxchange/pipefree/helper/log"
-	"time"
-
+	"strconv"
+	"strings"
 	"sync"
+	"time"
 )
 
 var pool *SessionManager
@@ -23,37 +24,34 @@ func initNebula() {
 	user := viper.GetString("nebula.username")
 	passwd := viper.GetString("nebula.password")
 	spaces := viper.GetStringSlice("nebula.spaces")
+	endpoints := parseAddress(viper.GetStringSlice("nebula.address"))
 	initPool()
 	if len(spaces) == 0 {
 		panic("spaces is empty")
 	}
 	for _, space := range spaces {
-		_, err := pool.open(space, user, passwd)
+		_, err := pool.open(space, user, passwd, endpoints)
 		if err != nil {
 			panic(fmt.Errorf("open space %s error: %v", space, err))
 		}
 	}
 }
 
-func Use(space string) *nebulaorm.DB {
+func Use(space string) *nebula_go.SessionPool {
 	session, ok := pool.Get(space)
 	if !ok {
 		panic("must open the space before use")
 	}
-	return session.DB
+	return session.SessionPool
 }
 
 type Session struct {
-	*nebulaorm.DB
-	*nebulaorm.Config
+	*nebula_go.SessionPool
 }
 
 func (s *Session) Close() {
-	if s.DB != nil {
-		err := s.DB.Close()
-		if err != nil {
-			log.Errorf("close session error: %v", err)
-		}
+	if s.SessionPool != nil {
+		s.SessionPool.Close()
 	}
 }
 
@@ -78,26 +76,22 @@ func (s *SessionManager) Get(space string) (*Session, bool) {
 	return pool, ok
 }
 
-func (s *SessionManager) open(space, user, passwd string) (*Session, error) {
+func (s *SessionManager) open(space, user, passwd string, endpoints []nebula_go.HostAddress) (*Session, error) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
-	conf := &nebulaorm.Config{
-		Username:        user,
-		Password:        passwd,
-		SpaceName:       space,
-		Addresses:       viper.GetStringSlice("nebula.address"),
-		ConnTimeout:     viper.GetDuration("nebula.timeout") * time.Second,
-		ConnMaxIdleTime: viper.GetDuration("nebula.idleTime") * time.Second,
-		MaxOpenConns:    viper.GetInt("nebula.maxConnSize"),
-		MinOpenConns:    viper.GetInt("nebula.minConnSize"),
+	opts := []nebula_go.SessionPoolConfOption{
+		nebula_go.WithTimeOut(viper.GetDuration("nebula.timeout") * time.Second),
+		nebula_go.WithIdleTime(viper.GetDuration("nebula.idleTime") * time.Second),
+		nebula_go.WithMaxSize(viper.GetInt("nebula.maxConnSize")),
+		nebula_go.WithMinSize(viper.GetInt("nebula.minConnSize")),
 	}
-	db, err := nebulaorm.Open(conf)
+	conf, err := nebula_go.NewSessionPoolConf(user, passwd, endpoints, space, opts...)
+	sessionPool, err := nebula_go.NewSessionPool(*conf, log.AsNebularLoggerPlugin())
 	if err != nil {
 		return nil, err
 	}
 	session := &Session{
-		DB:     db,
-		Config: conf,
+		SessionPool: sessionPool,
 	}
 	pool.store[space] = session
 	return session, nil
@@ -114,4 +108,26 @@ func Close() {
 		pool.Close()
 	}
 	log.Info("close nebula session")
+}
+
+func parseAddress(endpoints []string) []nebula_go.HostAddress {
+	var addresses []nebula_go.HostAddress
+	for _, endpoint := range endpoints {
+		s := strings.Split(endpoint, ":")
+		if len(s) != 2 {
+			log.Errorf("invalid nebula endpoint %s", endpoint)
+			continue
+		}
+		host := s[0]
+		port, err := strconv.Atoi(s[1])
+		if err != nil {
+			log.Errorf("invalid nebula endpoint %s", endpoint)
+			continue
+		}
+		addresses = append(addresses, nebula_go.HostAddress{
+			Host: host,
+			Port: port,
+		})
+	}
+	return addresses
 }
