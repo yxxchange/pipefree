@@ -53,7 +53,7 @@ func (p Pipe) CreatePipeExec(ctx context.Context, exec *model.PipeExec) (id inte
 }
 
 func (p Pipe) CreatePipeExecVertex(vertex interface{}, ifNotExist ...bool) error {
-	return nebula.Use(NebulaPipeExecSpace).ExecuteWithParameter()
+	nebula.Use(NebulaPipeExecSpace).ExecuteWithParameter()
 }
 
 func (p Pipe) CreatePipeExecEdge(edge interface{}, ifNotExist ...bool) error {

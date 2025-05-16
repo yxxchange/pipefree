@@ -11,12 +11,20 @@ type Vertex struct {
 	RuntimeUUID string `json:"runtime_uuid" yaml:"runtime_uuid" norm:"prop:runtime_uuid"`
 }
 
-func (v Vertex) VertexTagName() string {
+func (v Vertex) TagName() string {
 	return NebulaPipeExecBasicTag
 }
 
-func (v Vertex) VertexID() string {
+func (v Vertex) VID() string {
 	return v.RuntimeUUID
+}
+
+func (v Vertex) Props() map[string]interface{} {
+	return map[string]interface{}{
+		"runtime_uuid": v.RuntimeUUID,
+		"name":         v.Name,
+		"uuid":         v.UUID,
+	}
 }
 
 type Edge struct {
