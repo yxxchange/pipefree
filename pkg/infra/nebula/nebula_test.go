@@ -1,7 +1,6 @@
 package nebula
 
 import (
-	"fmt"
 	"github.com/yxxchange/pipefree/config"
 	"github.com/yxxchange/pipefree/helper/log"
 	"testing"
@@ -13,7 +12,7 @@ type TestVertex struct {
 }
 
 func (t TestVertex) VID() string {
-	return fmt.Sprintf("'%s'", t.Vid)
+	return t.Vid
 }
 
 func (t TestVertex) TagName() string {
@@ -52,21 +51,26 @@ func TestNebula(t *testing.T) {
 
 func initTestGraph() (err error) {
 	t11 := TestVertex{
-		Vid:  "1",
+		Vid:  "111",
 		Name: "t11",
 	}
-	res := HandleSQL("test", BuildGoNStepsSQL(1, t11.VID(), "edge_test", Yield(t11)), t11.Props())
+	res := HandleSQL("test", BuildInsertVertexSQL(t11), t11.Props())
 	if res.Err != nil {
-		log.Errorf("err: %v", res.Err)
-		return res.Err
+		panic(res.Err)
 	}
-	var tRes []TestVertex
-	err = res.Res.Scan(&tRes)
-	if err != nil {
-		log.Error(err.Error())
-		return
-	}
-	log.Infof("%+v", tRes)
+	//res := HandleSQL("test", BuildGoNStepsSQL(1, t11.VID(), "edge_test", Yield(t11)), t11.Props())
+	//if res.Err != nil {
+	//	log.Errorf("err: %v", res.Err)
+	//	return res.Err
+	//}
+	//var tRes []TestVertex
+	//err = res.Res.Scan(&tRes)
+	//if err != nil {
+	//	log.Error(err.Error())
+	//	return
+	//}
+	//log.Infof("%+v", tRes)
+	//return
 	return
 
 }

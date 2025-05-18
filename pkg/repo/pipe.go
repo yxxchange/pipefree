@@ -52,16 +52,20 @@ func (p Pipe) CreatePipeExec(ctx context.Context, exec *model.PipeExec) (id inte
 	return id, err
 }
 
-func (p Pipe) CreatePipeExecVertex(vertex interface{}, ifNotExist ...bool) error {
-	nebula.Use(NebulaPipeExecSpace).ExecuteWithParameter()
+func (p Pipe) CreatePipeExecVertex(vertex nebula.Vertex) error {
+	return nebula.HandleSQL(NebulaPipeExecSpace, nebula.BuildInsertVertexSQL(vertex), vertex.Props()).Err
 }
 
-func (p Pipe) CreatePipeExecEdge(edge interface{}, ifNotExist ...bool) error {
-	return nebula.Use(NebulaPipeExecSpace).InsertEdge(edge, ifNotExist...).Exec()
+func (p Pipe) CreatePipeExecEdge(edge nebula.Edge) error {
+	return nebula.HandleSQL(NebulaPipeExecSpace, nebula.BuildInsertEdgeSQL(edge), edge.Props()).Err
 }
 
-func (p Pipe) FindReachableVertex(cur model.Vertex) (bool, error) {
-	sql := `MATCH (v:pipe_exec_basic_tag {runtime_uuid: $uuid})-->(n) RETURN n`
-
-	nebula.Use(NebulaPipeExecSpace).Raw().Exec()
+func (p Pipe) FindVertex(curVid string, steps int, edgeType string) ([]model.Vertex, error) {
+	var vertex []model.Vertex
+	res := nebula.HandleSQL(NebulaPipeExecSpace, nebula.BuildGoNStepsSQL(steps, curVid, edgeType, nebula.Yield(model.Vertex{})), nil)
+	if res.Err != nil {
+		return vertex, res.Err
+	}
+	err := res.Res.Scan(&vertex)
+	return vertex, err
 }

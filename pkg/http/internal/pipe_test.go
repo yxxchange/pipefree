@@ -7,6 +7,7 @@ import (
 	"github.com/yxxchange/pipefree/helper/serialize"
 	"github.com/yxxchange/pipefree/pkg/infra"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
+	"github.com/yxxchange/pipefree/pkg/repo"
 	"os"
 	"testing"
 )
@@ -37,10 +38,19 @@ func TestCreatePipe(t *testing.T) {
 }
 
 func TestRunPipe(t *testing.T) {
-	testID := "68209f2918d2821aa21bfcc1"
+	testID := "6829bc78480667e83c1cc940"
 	err := RunPipe(context.TODO(), testID)
 	if err != nil {
 		panic(err)
 	}
 	log.Info("run pipe success")
+}
+
+func TestFindNextNode(t *testing.T) {
+	curID := "0b66182c-199a-4ccb-ac94-43fc65a2ab16"
+	ver, err := repo.PipeRepo.FindVertex(curID, 1, model.NebulaPipeExecBasicEdge)
+	if err != nil {
+		panic(err)
+	}
+	log.Infof("%+v", ver)
 }

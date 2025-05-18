@@ -83,14 +83,14 @@ func savePipeExec(ctx context.Context, pipeExec *model.PipeExec) error {
 
 func saveGraph(_ context.Context, graph *model.PipeExec) error {
 	for _, vertex := range graph.Graph.Vertexes {
-		err := repo.PipeRepo.CreatePipeExecVertex(vertex, true)
+		err := repo.PipeRepo.CreatePipeExecVertex(vertex)
 		if err != nil {
 			log.Errorf("create pipe exec vertex error: %v", err)
 			return err
 		}
 	}
 	for _, edge := range graph.Graph.Edges {
-		err := repo.PipeRepo.CreatePipeExecEdge(edge, true)
+		err := repo.PipeRepo.CreatePipeExecEdge(edge)
 		if err != nil {
 			log.Errorf("create pipe exec edge error: %v", err)
 			return err

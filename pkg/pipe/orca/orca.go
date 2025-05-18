@@ -2,18 +2,12 @@ package orca
 
 import (
 	"context"
-	"errors"
 	"github.com/yxxchange/pipefree/pkg/pipe/model"
 	"sync"
 )
 
 var orca *Orchestrator
 var once sync.Once
-
-var (
-	ErrorNotSupport   = errors.New("not support")
-	ErrorNodeNotReady = errors.New("node not in ready")
-)
 
 type Orchestrator struct {
 	*watcher

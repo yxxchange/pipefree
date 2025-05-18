@@ -19,12 +19,12 @@ const (
 
 	TagPropsTmpl            = PlaceHolderTag + " (" + PlaceHolderProp + ")"
 	EdgePropsTmpl           = PlaceHolderEdge + " (" + PlaceHolderProp + ")"
-	VertexPropValueListTmpl = PlaceHolderVid + ":" + "(" + PlaceHolderValue + ")"
-	EdgePropValueListTmpl   = PlaceHolderVid + "->" + PlaceHolderVid + ":" + "(" + PlaceHolderValue + ")"
+	VertexPropValueListTmpl = "'" + PlaceHolderVid + "'" + ":" + "(" + PlaceHolderValue + ")"
+	EdgePropValueListTmpl   = "'" + PlaceHolderVid + "'" + "->" + "'" + PlaceHolderVid + "'" + ":" + "(" + PlaceHolderValue + ")"
 
 	InsertVertexTmpl = "INSERT VERTEX " + TagPropsTmpl + " VALUES " + VertexPropValueListTmpl
 	InsertEdgeTmpl   = "INSERT EDGE " + EdgePropsTmpl + " VALUES " + EdgePropValueListTmpl
-	GONStepsTmpl     = "GO " + PlaceHolderN + " STEPS" + " FROM " + PlaceHolderVid + " OVER " + PlaceHolderEdge + " YIELD " + PlaceHolderYield
+	GONStepsTmpl     = "GO " + PlaceHolderN + " STEPS" + " FROM " + "'" + PlaceHolderVid + "'" + " OVER " + PlaceHolderEdge + " YIELD " + PlaceHolderYield
 )
 
 type Vertex interface {
@@ -107,9 +107,5 @@ func Yield(vertex Vertex) string {
 		yieldStr += "$$." + vertex.TagName() + "." + tagValue + " AS " + tagValue
 		flag = true
 	}
-	if flag {
-		yieldStr += ", "
-	}
-	yieldStr += "id($$) AS vid"
 	return yieldStr
 }
