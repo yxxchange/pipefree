@@ -131,3 +131,22 @@ func parseAddress(endpoints []string) []nebula_go.HostAddress {
 	}
 	return addresses
 }
+
+type Result struct {
+	Res *nebula_go.ResultSet
+	Err error
+}
+
+func HandleSQL(space string, sql string, parameters map[string]interface{}) (result Result) {
+	var err error
+	result.Res, err = Use(space).ExecuteWithParameter(sql, parameters)
+	if err != nil {
+		result.Err = err
+		return
+	}
+	if result.Res.GetErrorCode() != nebula_go.ErrorCode_SUCCEEDED {
+		result.Err = fmt.Errorf("code: %v, errMsg: %s", result.Res.GetErrorMsg(), result.Res.GetErrorMsg())
+		return
+	}
+	return
+}

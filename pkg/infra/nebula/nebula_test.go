@@ -1,22 +1,29 @@
 package nebula
 
 import (
+	"fmt"
 	"github.com/yxxchange/pipefree/config"
 	"github.com/yxxchange/pipefree/helper/log"
 	"testing"
 )
 
 type TestVertex struct {
-	VID  string `norm:"vertex_id"`
-	Name string `norm:"prop:name"`
+	Vid  string `nebula:"vid"`
+	Name string `nebula:"name"`
 }
 
-func (t TestVertex) VertexID() string {
-	return t.VID
+func (t TestVertex) VID() string {
+	return fmt.Sprintf("'%s'", t.Vid)
 }
 
-func (t TestVertex) VertexTagName() string {
+func (t TestVertex) TagName() string {
 	return "test"
+}
+
+func (t TestVertex) Props() map[string]interface{} {
+	return map[string]interface{}{
+		"name": "fghjk",
+	}
 }
 
 type TestEdge struct {
@@ -35,54 +42,31 @@ func TestNebula(t *testing.T) {
 	Init()
 
 	log.Info("nebula test ok")
-	//err := initTestGraph()
-	//if err != nil {
-	//	log.Errorf("err: %v", err)
-	//	return
-	//}
+	err := initTestGraph()
+	if err != nil {
+		log.Errorf("err: %v", err)
+		return
+	}
 
 }
 
-//func initTestGraph() (err error) {
-//	t1 := TestVertex{
-//		VID:  "1",
-//		Name: "t1",
-//	}
-//	t2 := TestVertex{
-//		VID:  "2",
-//		Name: "t2",
-//	}
-//	t3 := TestVertex{
-//		VID:  "3",
-//		Name: "t3",
-//	}
-//	t4 := TestVertex{
-//		VID:  "4",
-//		Name: "t4",
-//	}
-//	t5 := TestVertex{
-//		VID:  "5",
-//		Name: "t5",
-//	}
-//	e1 := TestEdge{
-//		SrcID: "1",
-//		DstID: "2",
-//	}
-//	e2 := TestEdge{
-//		SrcID: "1",
-//		DstID: "3",
-//	}
-//	e3 := TestEdge{
-//		SrcID: "2",
-//		DstID: "4",
-//	}
-//	e4 := TestEdge{
-//		SrcID: "2",
-//		DstID: "5",
-//	}
-//	e5 := TestEdge{
-//		SrcID: "3",
-//		DstID: "4",
-//	}
-//
-//}
+func initTestGraph() (err error) {
+	t11 := TestVertex{
+		Vid:  "1",
+		Name: "t11",
+	}
+	res := HandleSQL("test", BuildGoNStepsSQL(1, t11.VID(), "edge_test", Yield(t11)), t11.Props())
+	if res.Err != nil {
+		log.Errorf("err: %v", res.Err)
+		return res.Err
+	}
+	var tRes []TestVertex
+	err = res.Res.Scan(&tRes)
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+	log.Infof("%+v", tRes)
+	return
+
+}

@@ -38,7 +38,7 @@ etcd:
 
 nebula:
   address:
-    - localhost:62186
+    - 127.0.0.1:9669
   username: root
   password: <none>
   spaces:
