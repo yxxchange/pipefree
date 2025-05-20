@@ -71,7 +71,7 @@ func newWatcher(ctx context.Context) *watcher {
 	}
 }
 
-func (w *watcher) Register(idf model.NodeIdentifier) *EventFlow {
+func (w *watcher) Register(idf model.Schema) *EventFlow {
 	ch := safe.NewSafeChannel[*clientv3.WatchResponse](viper.GetInt("orca.watcher.queueSize"))
 	ef := NewEventFlow(ch)
 	safe.Go(func() {

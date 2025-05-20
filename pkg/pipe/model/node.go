@@ -62,8 +62,8 @@ func (n *Node) AddFromNode(meta *MetaData) {
 	return
 }
 
-func (n Node) ToIdentifier() NodeIdentifier {
-	return NodeIdentifier{
+func (n Node) ToSchema() Schema {
+	return Schema{
 		ApiVersion: n.ApiVersion,
 		Namespace:  n.MetaData.Namespace,
 		Kind:       n.Kind,
@@ -80,8 +80,9 @@ func (n Node) ToSnapshot() Node {
 }
 
 type PipeFlow struct {
-	Nodes []Node `json:"nodes,omitempty" yaml:"nodes,omitempty"` // the nodes of the pipe
-	Graph Graph  `json:"graph,omitempty" yaml:"graph,omitempty"` // the graph of the node
+	Nodes  []Node `json:"nodes,omitempty" yaml:"nodes,omitempty"` // the nodes of the pipe
+	Graph  Graph  `json:"graph,omitempty" yaml:"graph,omitempty"` // the graph of the node
+	Global Env    `json:"global,omitempty" yaml:"global,omitempty"`
 }
 
 func (n PipeFlow) ValidateStaticCfg() error {
@@ -195,16 +196,16 @@ type MetaData struct {
 	To       map[string]*MetaData `json:"-" yaml:"-"`
 }
 
-// NodeIdentifier means that node can be processed by which engine
+// Schema means that node can be processed by which engine
 // TODO: engine need to subscribe the pipe
-type NodeIdentifier struct {
+type Schema struct {
 	ApiVersion string `json:"apiVersion"`
 	Namespace  string `json:"namespace"`
 	Kind       Kind   `json:"kind"`
 	Operation  string `json:"operation"`
 }
 
-func (n NodeIdentifier) Identifier() string {
+func (n Schema) Identifier() string {
 	// apiVersion/space/tag/kind/operation
 	return fmt.Sprintf("/%s/%s/%s/%s", n.ApiVersion, n.Namespace, n.Kind, n.Operation)
 }

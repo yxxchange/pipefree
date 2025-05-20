@@ -34,7 +34,7 @@ func (s *WatchServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	s.beginChunkedStream(w, f)
 	log.Info("start to watch")
-	idf := model.NodeIdentifier{
+	idf := model.Schema{
 		ApiVersion: s.param.ApiVersion,
 		Namespace:  s.param.Namespace,
 		Kind:       s.param.Kind,

@@ -68,7 +68,7 @@ func RunPipe(ctx context.Context, id string) error {
 		log.Errorf("find the origin error: %v", err)
 		return err
 	}
-	return etcd.Put(ctx, origin.ToIdentifier().Identifier(), origin.ToString())
+	return etcd.Put(ctx, origin.ToSchema().Identifier(), origin.ToString())
 }
 
 func savePipeExec(ctx context.Context, pipeExec *model.PipeExec) error {
