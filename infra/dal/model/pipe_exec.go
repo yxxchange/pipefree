@@ -15,3 +15,7 @@ type PipeExec struct {
 	EnvVars   EnvVars `json:"env_vars" gorm:"column:env_vars;type:json"` // 环境变量
 	State     int     `json:"state" gorm:"column:state"`                 // 流水线执行状态
 }
+
+func (*PipeExec) TableName() string {
+	return "pipe_exec"
+}

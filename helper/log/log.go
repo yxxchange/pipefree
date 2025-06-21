@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"io"
 	"os"
+	"strings"
 )
 
 const (
@@ -90,7 +91,7 @@ func (l *Log) Debug(msg string) {
 }
 
 func (l *Log) Debugf(format string, args ...interface{}) {
-	l.logger.Debug(fmt.Sprintf(format, args))
+	l.logger.Debug(fmt.Sprintf(format, args...))
 }
 
 func (l *Log) Info(msg string) {
@@ -98,7 +99,7 @@ func (l *Log) Info(msg string) {
 }
 
 func (l *Log) Infof(format string, args ...interface{}) {
-	l.logger.Info(fmt.Sprintf(format, args))
+	l.logger.Info(fmt.Sprintf(format, args...))
 }
 
 func (l *Log) Error(msg string) {
@@ -106,7 +107,7 @@ func (l *Log) Error(msg string) {
 }
 
 func (l *Log) Errorf(format string, args ...interface{}) {
-	l.logger.Error(fmt.Sprintf(format, args))
+	l.logger.Error(fmt.Sprintf(format, args...))
 }
 
 func (l *Log) Warn(msg string) {
@@ -114,7 +115,7 @@ func (l *Log) Warn(msg string) {
 }
 
 func (l *Log) Warnf(format string, args ...interface{}) {
-	l.logger.Warn(fmt.Sprintf(format, args))
+	l.logger.Warn(fmt.Sprintf(format, args...))
 }
 
 func (l *Log) Fatal(msg string) {
@@ -122,7 +123,7 @@ func (l *Log) Fatal(msg string) {
 }
 
 func (l *Log) Fatalf(format string, args ...interface{}) {
-	l.logger.Fatal(fmt.Sprintf(format, args))
+	l.logger.Fatal(fmt.Sprintf(format, args...))
 }
 
 func wrap(logger *zap.Logger) ILogger {
@@ -224,6 +225,39 @@ func AsZapLoggerPlugin() *zap.Logger {
 	return _logger.(*Log).logger
 }
 
-func AsNebularLoggerPlugin() ILogger {
-	return _logger
+type GormLoggerPlugin struct {
+	Logger ILogger
+}
+
+const (
+	infoStr      = "%s\n[info] "
+	warnStr      = "%s\n[warn] "
+	errStr       = "%s\n[error] "
+	traceStr     = "%s\n[%.3fms] [rows:%v] %s"
+	traceWarnStr = "%s %s\n[%.3fms] [rows:%v] %s"
+	traceErrStr  = "%s %s\n[%.3fms] [rows:%v] %s"
+)
+
+func (g *GormLoggerPlugin) Printf(format string, v ...interface{}) {
+	if strings.HasPrefix(format, infoStr) {
+		g.Logger.Infof(format, v[1:]...)
+	} else if strings.HasPrefix(format, warnStr) {
+		g.Logger.Warnf(format, v[1:]...)
+	} else if strings.HasPrefix(format, errStr) {
+		g.Logger.Errorf(format, v[1:]...)
+	} else if strings.HasPrefix(format, traceStr) {
+		g.Logger.Debugf(format, v[1:]...)
+	} else if strings.HasPrefix(format, traceWarnStr) {
+		g.Logger.Warnf(format, v[1:]...)
+	} else if strings.HasPrefix(format, traceErrStr) {
+		g.Logger.Errorf(format, v[1:]...)
+	} else {
+		g.Logger.Debugf(format, v...)
+	}
+}
+
+func AsGormLoggerPlugin() *GormLoggerPlugin {
+	return &GormLoggerPlugin{
+		Logger: _logger,
+	}
 }

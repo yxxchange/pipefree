@@ -6,3 +6,7 @@ type PipeVersion struct {
 	Version   int     `json:"version" gorm:"column:version"`             // 流水线版本号
 	Config    PipeCfg `json:"pipe_cfg" gorm:"column:pipe_cfg;type:json"` // 流水线配置内容
 }
+
+func (*PipeVersion) TableName() string {
+	return "pipe_version"
+}

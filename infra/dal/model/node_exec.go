@@ -28,6 +28,10 @@ type NodeExec struct {
 	Phase      NodePhase       `json:"status" gorm:"column:status"`             // 节点执行节点
 }
 
+func (*NodeExec) TableName() string {
+	return "node_exec"
+}
+
 type NodePhase struct {
 	Phase  string       `json:"phase"`  // 节点状态，如：Pending、Running、Succeeded、Failed等
 	Chains []PhaseChain `json:"chains"` // 状态快照链

@@ -10,3 +10,7 @@ type NodeCfg struct {
 	InDegree  int             `json:"in_degree" gorm:"column:in_degree"`     // 入度
 	Spec      json.RawMessage `json:"spec" gorm:"column:spec"`               // 节点配置参数
 }
+
+func (*NodeCfg) TableName() string {
+	return "node_cfg"
+}

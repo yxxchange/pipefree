@@ -21,6 +21,13 @@ log:
 http:
   port: 8080
 
+mysql:
+  host: localhost
+  port: 3306
+  user: root
+  password: 123456
+  database: pipeFree
+  migrate: true
 
 
 
@@ -36,36 +43,3 @@ etcd:
     interval: 30 # second
     jitter: 0.3 # float
 
-nebula:
-  address:
-    - 127.0.0.1:9669
-  username: root
-  password: <none>
-  spaces:
-    - test
-    - pipe_exec
-  sessionConfig:
-    maxConnSize: 100
-    minConnSize: 30
-    idleTime: 30 # second
-    timeout: 0 # second
-    useHttp2: false
-
-mongoDB:
-    uri: mongodb://localhost:27017
-    username: root
-    password: <none>
-    database: pipeFree
-    collections:
-      - pipe_cfg
-      - pipe_exec_snapshot
-    options:
-      timeout: 30 # seconds
-      maxPoolSize: 100
-      minPoolSize: 10
-      maxConnIdleTime: 30 # seconds
-      needAuth: false
-
-orca:
-  watcher:
-    queueSize: 1000

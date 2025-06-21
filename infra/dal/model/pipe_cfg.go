@@ -21,6 +21,10 @@ type PipeCfg struct {
 	Graph     Graph   `json:"graph" gorm:"column:graph"`         // 流水线图结构
 }
 
+func (*PipeCfg) TableName() string {
+	return "pipe_cfg"
+}
+
 func (p *PipeCfg) Scan(value interface{}) (err error) {
 	switch v := value.(type) {
 	case string:
