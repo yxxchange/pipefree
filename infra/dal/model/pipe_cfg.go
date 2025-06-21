@@ -15,8 +15,21 @@ type PipeCfg struct {
 	Name      string  `json:"name" gorm:"column:name"`           // 流水线名称
 	Namespace string  `json:"namespace" gorm:"column:namespace"` // 流水线命名空间
 	Desc      string  `json:"desc" gorm:"column:desc"`           // 流水线描述
+	Version   int     `json:"version" gorm:"column:version"`     // 流水线版本
 	EnvVars   EnvVars `json:"env_vars" gorm:"column:env_vars"`   // 流水线环境变量
 	Graph     Graph   `json:"graph" gorm:"column:graph"`         // 流水线图结构
+}
+
+func (p *PipeCfg) Scan(value interface{}) (err error) {
+	switch v := value.(type) {
+	case string:
+		err = json.Unmarshal([]byte(v), p)
+	case []byte:
+		err = json.Unmarshal(v, p)
+	default:
+		err = fmt.Errorf("unsupported type for Config: %T", value)
+	}
+	return err
 }
 
 type EnvVars []EnvVar

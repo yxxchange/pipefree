@@ -1,6 +1,7 @@
-package gorm_gen
+package main
 
 import (
+	"github.com/yxxchange/pipefree/infra/dal/model"
 	"gorm.io/gen"
 )
 
@@ -12,15 +13,14 @@ func main() {
 		FieldNullable: true,
 	})
 
-	// Initialize a *gorm.DB instance
-	// db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-
-	// Use the above `*gorm.DB` instance to initialize the generator,
-	// which is required to generate structs from db when using `GenerateModel/GenerateModelAs`
-	// g.UseDB(db)
-
-	// Generate default DAO interface for those specified structs
-	g.ApplyBasic(model.Customer{}, model.CreditCard{}, model.Bank{}, model.Passport{})
+	ApplyList := []interface{}{
+		model.PipeCfg{},
+		model.PipeExec{},
+		model.PipeVersion{},
+		model.NodeCfg{},
+		model.NodeExec{},
+	}
+	g.ApplyBasic(ApplyList...)
 
 	// Execute the generator
 	g.Execute()
