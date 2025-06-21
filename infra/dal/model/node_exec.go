@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -42,6 +43,17 @@ func (n *NodePhase) Scan(value interface{}) (err error) {
 		err = fmt.Errorf("unsupported type for NodePhase: %T", value)
 	}
 	return err
+}
+
+func (n *NodePhase) Value() (value driver.Value, err error) {
+	if n == nil {
+		return nil, nil
+	}
+	value, err = json.Marshal(n)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal NodePhase: %w", err)
+	}
+	return value, nil
 }
 
 type PhaseChain struct {

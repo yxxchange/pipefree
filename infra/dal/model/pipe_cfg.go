@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 )
@@ -32,6 +33,17 @@ func (p *PipeCfg) Scan(value interface{}) (err error) {
 	return err
 }
 
+func (p *PipeCfg) Value() (value driver.Value, err error) {
+	if p == nil {
+		return nil, nil
+	}
+	value, err = json.Marshal(p)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal PipeCfg: %w", err)
+	}
+	return value, nil
+}
+
 type EnvVars []EnvVar
 
 func (envs *EnvVars) Scan(value interface{}) (err error) {
@@ -46,23 +58,22 @@ func (envs *EnvVars) Scan(value interface{}) (err error) {
 	return err
 }
 
+func (envs *EnvVars) Value() (value driver.Value, err error) {
+	if envs == nil {
+		return nil, nil
+	}
+	value, err = json.Marshal(envs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal EnvVars: %w", err)
+	}
+	return value, nil
+}
+
 type EnvVar struct {
 	Scope  string      `json:"scope"`  // 环境变量属性,如：全局、节点等
 	Target string      `json:"target"` // 环境变量目标,如：节点名称
 	Key    string      `json:"key"`    // 环境变量键
 	Value  interface{} `json:"value"`  // 环境变量值
-}
-
-func (e *EnvVar) Scan(value interface{}) (err error) {
-	switch v := value.(type) {
-	case string:
-		err = json.Unmarshal([]byte(v), e)
-	case []byte:
-		err = json.Unmarshal(v, e)
-	default:
-		err = fmt.Errorf("unsupported type for EnvVar: %T", value)
-	}
-	return err
 }
 
 type Graph struct {
@@ -80,6 +91,17 @@ func (g *Graph) Scan(value interface{}) (err error) {
 		err = fmt.Errorf("unsupported type for Graph: %T", value)
 	}
 	return err
+}
+
+func (g *Graph) Value() (value driver.Value, err error) {
+	if g == nil {
+		return nil, nil
+	}
+	value, err = json.Marshal(g)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal Graph: %w", err)
+	}
+	return value, nil
 }
 
 type Vertex struct {
