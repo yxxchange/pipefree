@@ -13,12 +13,12 @@ const (
 
 type PipeCfg struct {
 	Basic
-	Name      string  `json:"name" gorm:"column:name"`           // 流水线名称
-	Namespace string  `json:"namespace" gorm:"column:namespace"` // 流水线命名空间
-	Desc      string  `json:"desc" gorm:"column:desc"`           // 流水线描述
-	Version   int     `json:"version" gorm:"column:version"`     // 流水线版本
-	EnvVars   EnvVars `json:"env_vars" gorm:"column:env_vars"`   // 流水线环境变量
-	Graph     Graph   `json:"graph" gorm:"column:graph"`         // 流水线图结构
+	Name      string  `json:"name" yaml:"name" gorm:"column:name"`                // 流水线名称
+	Namespace string  `json:"namespace" yaml:"namespace" gorm:"column:namespace"` // 流水线命名空间
+	Desc      string  `json:"desc" yaml:"desc" gorm:"column:desc"`                // 流水线描述
+	Version   int     `json:"version" yaml:"version" gorm:"column:version"`       // 流水线版本
+	EnvVars   EnvVars `json:"env_vars" yaml:"envVars" gorm:"column:env_vars"`     // 流水线环境变量
+	Graph     Graph   `json:"graph" yaml:"graph" gorm:"column:graph"`             // 流水线图结构
 }
 
 func (*PipeCfg) TableName() string {
@@ -74,15 +74,15 @@ func (envs *EnvVars) Value() (value driver.Value, err error) {
 }
 
 type EnvVar struct {
-	Scope  string      `json:"scope"`  // 环境变量属性,如：全局、节点等
-	Target string      `json:"target"` // 环境变量目标,如：节点名称
-	Key    string      `json:"key"`    // 环境变量键
-	Value  interface{} `json:"value"`  // 环境变量值
+	Scope  string      `json:"scope" yaml:"scope"`   // 环境变量属性,如：全局、节点等
+	Target string      `json:"target" yaml:"target"` // 环境变量目标,如：节点名称
+	Key    string      `json:"key" yaml:"key"`       // 环境变量键
+	Value  interface{} `json:"value" yaml:"value"`   // 环境变量值
 }
 
 type Graph struct {
-	Vertexes []Vertex `json:"vertexes"` // 图的顶点集合
-	Edges    []Edge   `json:"edges"`    // 图的边集合
+	Vertexes []Vertex `json:"vertexes" yaml:"vertexes"` // 图的顶点集合
+	Edges    []Edge   `json:"edges" yaml:"edges"`       // 图的边集合
 }
 
 func (g *Graph) Scan(value interface{}) (err error) {
@@ -109,10 +109,10 @@ func (g *Graph) Value() (value driver.Value, err error) {
 }
 
 type Vertex struct {
-	Name string `json:"name"` // 节点名称
+	Name string `json:"name" yaml:"name"` // 节点名称
 }
 
 type Edge struct {
-	From string `json:"from"` // 边的起点
-	To   string `json:"to"`   // 边的终点
+	From string `json:"from" yaml:"from"` // 边的起点
+	To   string `json:"to" yaml:"to"`     // 边的终点
 }
