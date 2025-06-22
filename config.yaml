@@ -33,13 +33,9 @@ mysql:
 
 etcd:
   endpoints:
-    - http://localhost:2379
-  time:
-    autoSyncInterval: 30 # second
-    dialTimeout: 30 # second
-    keepAlivePeriod: 30 # second
-  retryCfg:
-    maxSize: 5
-    interval: 30 # second
-    jitter: 0.3 # float
+    - http://127.0.0.1:2379
+  timeout: 30 # seconds
+  auth:
+    username: root
+    password: 123456
 
