@@ -19,13 +19,13 @@ const (
 
 type NodeExec struct {
 	Basic
-	Name       string          `json:"name" gorm:"column:name"`                 // 节点名称
-	NodeCfgId  int64           `json:"node_cfg_id" gorm:"column:node_cfg_id"`   // 节点配置ID
-	PipeCfgId  int64           `json:"pipe_cfg_id" gorm:"column:pipe_cfg_id"`   // 流水线配置ID
-	PipeExecId int64           `json:"pipe_exec_id" gorm:"column:pipe_exec_id"` // 流水线执行ID
-	InDegree   int             `json:"inDegree" gorm:"column:in_degree"`        // 入度
-	Spec       json.RawMessage `json:"spec" gorm:"column:spec"`                 // 节点执行参数
-	Phase      NodePhase       `json:"status" gorm:"column:status"`             // 节点执行节点
+	Name       string     `json:"name" gorm:"column:name"`                 // 节点名称
+	NodeCfgId  int64      `json:"node_cfg_id" gorm:"column:node_cfg_id"`   // 节点配置ID
+	PipeCfgId  int64      `json:"pipe_cfg_id" gorm:"column:pipe_cfg_id"`   // 流水线配置ID
+	PipeExecId int64      `json:"pipe_exec_id" gorm:"column:pipe_exec_id"` // 流水线执行ID
+	InDegree   int        `json:"inDegree" gorm:"column:in_degree"`        // 入度
+	Spec       *Kv        `json:"spec" gorm:"column:spec"`                 // 节点执行参数
+	Phase      *NodePhase `json:"status" gorm:"column:status"`             // 节点执行节点
 }
 
 func (*NodeExec) TableName() string {

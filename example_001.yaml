@@ -1,0 +1,65 @@
+pipe:
+  name: demo-pipeline
+  namespace: default
+  desc: 一个简单的测试流水线
+  version: 1
+  env_vars:
+    - scope: global
+      target: ""
+      key: LOG_LEVEL
+      value: debug
+  graph:
+    vertexes:
+      - name: node-1
+      - name: node-2
+      - name: node-3
+      - name: node-4
+      - name: node-5
+      - name: node-6
+    edges:
+      - from: node-1
+        to: node-3
+      - from: node-2
+        to: node-4
+      - from: node-3
+        to: node-4
+      - from: node-4
+        to: node-5
+nodes:
+  - name: node-1
+    desc: 第一个节点，负责初始化
+    pipe_cfg_id: 123
+    in_degree: 0
+    spec:
+      image: alpine:latest
+      command: ["sh", "-c", "echo hello from node1"]
+  - name: node-2
+    desc: 第二个节点，接收输入并处理
+    pipe_cfg_id: 123
+    spec:
+      image: ubuntu:latest
+      command: ["echo", "hello from node2"]
+  - name: node-3
+    desc: 第三个节点，处理来自node-1的输出
+    pipe_cfg_id: 123
+    spec:
+      image: busybox:latest
+      command: ["sh", "-c", "echo hello from node3"]
+  - name: node-4
+    desc: 第四个节点，处理来自node-2和node-3的输出
+    pipe_cfg_id: 123
+    spec:
+      image: debian:latest
+      command: ["sh", "-c", "echo hello from node4"]
+  - name: node-5
+    desc: 第五个节点，处理来自node-4的输出
+    pipe_cfg_id: 123
+    spec:
+      image: alpine:latest
+      command: ["sh", "-c", "echo hello from node5"]
+  - name: node-6
+    desc: 第六个节点，处理来自node-5的输出
+    pipe_cfg_id: 123
+    spec:
+      image: alpine:latest
+      command: ["sh", "-c", "echo hello from node6"]

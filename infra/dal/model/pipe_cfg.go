@@ -13,12 +13,12 @@ const (
 
 type PipeCfg struct {
 	Basic
-	Name      string  `json:"name" yaml:"name" gorm:"column:name"`                // 流水线名称
-	Namespace string  `json:"namespace" yaml:"namespace" gorm:"column:namespace"` // 流水线命名空间
-	Desc      string  `json:"desc" yaml:"desc" gorm:"column:desc"`                // 流水线描述
-	Version   int     `json:"version" yaml:"version" gorm:"column:version"`       // 流水线版本
-	EnvVars   EnvVars `json:"env_vars" yaml:"envVars" gorm:"column:env_vars"`     // 流水线环境变量
-	Graph     Graph   `json:"graph" yaml:"graph" gorm:"column:graph"`             // 流水线图结构
+	Name      string   `json:"name" yaml:"name" gorm:"column:name"`                // 流水线名称
+	Namespace string   `json:"namespace" yaml:"namespace" gorm:"column:namespace"` // 流水线命名空间
+	Desc      string   `json:"desc" yaml:"desc" gorm:"column:desc"`                // 流水线描述
+	Version   int      `json:"version" yaml:"version" gorm:"column:version"`       // 流水线版本
+	EnvVars   *EnvVars `json:"env_vars" yaml:"envVars" gorm:"column:env_vars"`     // 流水线环境变量
+	Graph     *Graph   `json:"graph" yaml:"graph" gorm:"column:graph"`             // 流水线图结构
 }
 
 func (*PipeCfg) TableName() string {
@@ -109,7 +109,9 @@ func (g *Graph) Value() (value driver.Value, err error) {
 }
 
 type Vertex struct {
-	Name string `json:"name" yaml:"name"` // 节点名称
+	Name     string   `json:"name" yaml:"name"` // 节点名称
+	InDegree int      `json:"-" yaml:"-"`       // 入度
+	Next     []string `json:"-" yaml:"-"`       // 下一个节点名称列表
 }
 
 type Edge struct {
