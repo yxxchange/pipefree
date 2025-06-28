@@ -7,8 +7,22 @@ const (
 	PipeExecStateFailed  int = 2  // 流水线执行失败
 )
 
+func NewPipeExec(pipe *PipeCfg) *PipeExec {
+	return &PipeExec{
+		Name:      pipe.Name,
+		Namespace: pipe.Namespace,
+		PipeCfgId: pipe.Id,
+		Version:   pipe.Version,
+		Graph:     *pipe.Graph,
+		EnvVars:   *pipe.EnvVars,
+		State:     PipeExecStateRunning,
+	}
+}
+
 type PipeExec struct {
 	Basic
+	Name      string  `json:"name" gorm:"column:name"`                   // 流水线名称
+	Namespace string  `json:"namespace" gorm:"column:namespace"`         // 流水线命名空间
 	PipeCfgId int64   `json:"pipe_cfg_id" gorm:"column:pipe_cfg_id"`     // 流水线配置ID
 	Version   int     `json:"version" gorm:"column:version"`             // 流水线版本号
 	Graph     Graph   `json:"graph" gorm:"column:graph;type:json"`       // 流水线图内容

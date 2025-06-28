@@ -50,6 +50,27 @@ func Put(ctx context.Context, key, value string) error {
 	return err
 }
 
+// TransactionPut 带事务的设置键值对
+func TransactionPut(ctx context.Context, kv map[string]string) error {
+	if len(kv) == 0 {
+		return nil // 如果没有键值对需要设置，直接返回
+	}
+
+	ops := make([]clientv3.Op, 0, len(kv))
+	for k, v := range kv {
+		ops = append(ops, clientv3.OpPut(k, v))
+	}
+
+	txnResp, err := cli.Txn(ctx).Then(ops...).Commit()
+	if err != nil {
+		return fmt.Errorf("transaction put failed: %w", err)
+	}
+	if !txnResp.Succeeded {
+		return fmt.Errorf("transaction put failed, no keys were updated")
+	}
+	return nil
+}
+
 // Get 获取指定键的值
 func Get(ctx context.Context, key string) (Response, error) {
 	resp, err := cli.Get(ctx, key)

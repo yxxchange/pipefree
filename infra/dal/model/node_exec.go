@@ -17,15 +17,35 @@ const (
 	NodePhaseUnknown   = "Unknown"   // 节点未知状态
 )
 
+func NewNodeExec(node *NodeCfg, pipe *PipeExec) *NodeExec {
+	return &NodeExec{
+		Name:        node.Name,
+		Namespace:   pipe.Namespace,
+		PipeName:    pipe.Name,
+		PipeVersion: pipe.Version,
+		NodeCfgId:   node.Id,
+		PipeCfgId:   node.PipeCfgId,
+		PipeExecId:  pipe.Id,
+		InDegree:    node.InDegree,
+		Spec:        node.Spec,
+		Phase: &NodePhase{
+			Phase: NodePhaseReady,
+		},
+	}
+}
+
 type NodeExec struct {
 	Basic
-	Name       string     `json:"name" gorm:"column:name"`                 // 节点名称
-	NodeCfgId  int64      `json:"node_cfg_id" gorm:"column:node_cfg_id"`   // 节点配置ID
-	PipeCfgId  int64      `json:"pipe_cfg_id" gorm:"column:pipe_cfg_id"`   // 流水线配置ID
-	PipeExecId int64      `json:"pipe_exec_id" gorm:"column:pipe_exec_id"` // 流水线执行ID
-	InDegree   int        `json:"inDegree" gorm:"column:in_degree"`        // 入度
-	Spec       *Kv        `json:"spec" gorm:"column:spec"`                 // 节点执行参数
-	Phase      *NodePhase `json:"status" gorm:"column:status"`             // 节点执行节点
+	Name        string     `json:"name" gorm:"column:name"`                 // 节点名称
+	Namespace   string     `json:"namespace" gorm:"column:namespace"`       // 节点命名空间
+	PipeName    string     `json:"pipe_name" gorm:"column:pipe_name"`       // 流水线名称
+	PipeVersion int        `json:"pipe_version" gorm:"column:pipe_version"` // 流水线版本
+	NodeCfgId   int64      `json:"node_cfg_id" gorm:"column:node_cfg_id"`   // 节点配置ID
+	PipeCfgId   int64      `json:"pipe_cfg_id" gorm:"column:pipe_cfg_id"`   // 流水线配置ID
+	PipeExecId  int64      `json:"pipe_exec_id" gorm:"column:pipe_exec_id"` // 流水线执行ID
+	InDegree    int        `json:"inDegree" gorm:"column:in_degree"`        // 入度
+	Spec        *Kv        `json:"spec" gorm:"column:spec"`                 // 节点执行参数
+	Phase       *NodePhase `json:"status" gorm:"column:status"`             // 节点执行节点
 }
 
 func (*NodeExec) TableName() string {
