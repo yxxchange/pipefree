@@ -13,12 +13,12 @@ const (
 
 type PipeCfg struct {
 	Basic
-	Name      string   `json:"name" yaml:"name" gorm:"column:name"`                // 流水线名称
-	Namespace string   `json:"namespace" yaml:"namespace" gorm:"column:namespace"` // 流水线命名空间
-	Desc      string   `json:"desc" yaml:"desc" gorm:"column:desc"`                // 流水线描述
-	Version   int      `json:"version" yaml:"version" gorm:"column:version"`       // 流水线版本
-	EnvVars   *EnvVars `json:"env_vars" yaml:"envVars" gorm:"column:env_vars"`     // 流水线环境变量
-	Graph     *Graph   `json:"graph" yaml:"graph" gorm:"column:graph"`             // 流水线图结构
+	Name    string   `json:"name" yaml:"name" gorm:"column:name"`            // 流水线名称
+	Space   string   `json:"space" yaml:"space" gorm:"column:space"`         // 项目空间
+	Desc    string   `json:"desc" yaml:"desc" gorm:"column:desc"`            // 流水线描述
+	Version int      `json:"version" yaml:"version" gorm:"column:version"`   // 流水线版本
+	EnvVars *EnvVars `json:"env_vars" yaml:"envVars" gorm:"column:env_vars"` // 流水线环境变量
+	Graph   *Graph   `json:"graph" yaml:"graph" gorm:"column:graph"`         // 流水线图结构
 }
 
 func (*PipeCfg) TableName() string {

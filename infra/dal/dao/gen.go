@@ -16,54 +16,69 @@ import (
 )
 
 var (
-	Q           = new(Query)
-	NodeCfg     *nodeCfg
-	NodeExec    *nodeExec
-	PipeCfg     *pipeCfg
-	PipeExec    *pipeExec
-	PipeVersion *pipeVersion
+	Q              = new(Query)
+	NodeCfg        *nodeCfg
+	NodeExec       *nodeExec
+	NodeNamespace  *nodeNamespace
+	PermissionItem *permissionItem
+	PipeCfg        *pipeCfg
+	PipeExec       *pipeExec
+	PipeSpace      *pipeSpace
+	PipeVersion    *pipeVersion
 )
 
 func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	*Q = *Use(db, opts...)
 	NodeCfg = &Q.NodeCfg
 	NodeExec = &Q.NodeExec
+	NodeNamespace = &Q.NodeNamespace
+	PermissionItem = &Q.PermissionItem
 	PipeCfg = &Q.PipeCfg
 	PipeExec = &Q.PipeExec
+	PipeSpace = &Q.PipeSpace
 	PipeVersion = &Q.PipeVersion
 }
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:          db,
-		NodeCfg:     newNodeCfg(db, opts...),
-		NodeExec:    newNodeExec(db, opts...),
-		PipeCfg:     newPipeCfg(db, opts...),
-		PipeExec:    newPipeExec(db, opts...),
-		PipeVersion: newPipeVersion(db, opts...),
+		db:             db,
+		NodeCfg:        newNodeCfg(db, opts...),
+		NodeExec:       newNodeExec(db, opts...),
+		NodeNamespace:  newNodeNamespace(db, opts...),
+		PermissionItem: newPermissionItem(db, opts...),
+		PipeCfg:        newPipeCfg(db, opts...),
+		PipeExec:       newPipeExec(db, opts...),
+		PipeSpace:      newPipeSpace(db, opts...),
+		PipeVersion:    newPipeVersion(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	NodeCfg     nodeCfg
-	NodeExec    nodeExec
-	PipeCfg     pipeCfg
-	PipeExec    pipeExec
-	PipeVersion pipeVersion
+	NodeCfg        nodeCfg
+	NodeExec       nodeExec
+	NodeNamespace  nodeNamespace
+	PermissionItem permissionItem
+	PipeCfg        pipeCfg
+	PipeExec       pipeExec
+	PipeSpace      pipeSpace
+	PipeVersion    pipeVersion
 }
 
 func (q *Query) Available() bool { return q.db != nil }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:          db,
-		NodeCfg:     q.NodeCfg.clone(db),
-		NodeExec:    q.NodeExec.clone(db),
-		PipeCfg:     q.PipeCfg.clone(db),
-		PipeExec:    q.PipeExec.clone(db),
-		PipeVersion: q.PipeVersion.clone(db),
+		db:             db,
+		NodeCfg:        q.NodeCfg.clone(db),
+		NodeExec:       q.NodeExec.clone(db),
+		NodeNamespace:  q.NodeNamespace.clone(db),
+		PermissionItem: q.PermissionItem.clone(db),
+		PipeCfg:        q.PipeCfg.clone(db),
+		PipeExec:       q.PipeExec.clone(db),
+		PipeSpace:      q.PipeSpace.clone(db),
+		PipeVersion:    q.PipeVersion.clone(db),
 	}
 }
 
@@ -77,30 +92,39 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:          db,
-		NodeCfg:     q.NodeCfg.replaceDB(db),
-		NodeExec:    q.NodeExec.replaceDB(db),
-		PipeCfg:     q.PipeCfg.replaceDB(db),
-		PipeExec:    q.PipeExec.replaceDB(db),
-		PipeVersion: q.PipeVersion.replaceDB(db),
+		db:             db,
+		NodeCfg:        q.NodeCfg.replaceDB(db),
+		NodeExec:       q.NodeExec.replaceDB(db),
+		NodeNamespace:  q.NodeNamespace.replaceDB(db),
+		PermissionItem: q.PermissionItem.replaceDB(db),
+		PipeCfg:        q.PipeCfg.replaceDB(db),
+		PipeExec:       q.PipeExec.replaceDB(db),
+		PipeSpace:      q.PipeSpace.replaceDB(db),
+		PipeVersion:    q.PipeVersion.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	NodeCfg     INodeCfgDo
-	NodeExec    INodeExecDo
-	PipeCfg     IPipeCfgDo
-	PipeExec    IPipeExecDo
-	PipeVersion IPipeVersionDo
+	NodeCfg        INodeCfgDo
+	NodeExec       INodeExecDo
+	NodeNamespace  INodeNamespaceDo
+	PermissionItem IPermissionItemDo
+	PipeCfg        IPipeCfgDo
+	PipeExec       IPipeExecDo
+	PipeSpace      IPipeSpaceDo
+	PipeVersion    IPipeVersionDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		NodeCfg:     q.NodeCfg.WithContext(ctx),
-		NodeExec:    q.NodeExec.WithContext(ctx),
-		PipeCfg:     q.PipeCfg.WithContext(ctx),
-		PipeExec:    q.PipeExec.WithContext(ctx),
-		PipeVersion: q.PipeVersion.WithContext(ctx),
+		NodeCfg:        q.NodeCfg.WithContext(ctx),
+		NodeExec:       q.NodeExec.WithContext(ctx),
+		NodeNamespace:  q.NodeNamespace.WithContext(ctx),
+		PermissionItem: q.PermissionItem.WithContext(ctx),
+		PipeCfg:        q.PipeCfg.WithContext(ctx),
+		PipeExec:       q.PipeExec.WithContext(ctx),
+		PipeSpace:      q.PipeSpace.WithContext(ctx),
+		PipeVersion:    q.PipeVersion.WithContext(ctx),
 	}
 }
 

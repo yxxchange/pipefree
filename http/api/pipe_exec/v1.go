@@ -13,14 +13,14 @@ const (
 func RegisterV1(router *gin.RouterGroup) {
 	group := router.Group(routeGroup)
 	{
-		group.POST(":id", Run)
+		group.POST("/:id", Run)
 	}
 }
 
 func Run(c *gin.Context) {
 	var req PipeExecReqParam
 	if err := c.ShouldBindUri(&req); err != nil {
-		common.ResponseError(c, -1, "Invalid request parameters")
+		common.ResponseError(c, -1, "invalid request parameters")
 		return
 	}
 	if req.PipeId <= 0 {
@@ -32,5 +32,5 @@ func Run(c *gin.Context) {
 		common.ResponseError(c, pipe_exec.ErrorCode, err.Error())
 		return
 	}
-	common.ResponseOk(c, nil)
+	common.ResponseOk(c, "pipe execution started successfully")
 }

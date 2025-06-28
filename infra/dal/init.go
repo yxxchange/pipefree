@@ -14,16 +14,32 @@ import (
 
 const DsnTemplate = "user:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=UTC"
 
+var DbModels = []interface{}{
+	model.PipeCfg{},
+	model.PipeExec{},
+	model.PipeVersion{},
+	model.NodeCfg{},
+	model.NodeExec{},
+	model.PipeSpace{},
+	model.NodeNamespace{},
+	model.PermissionItem{},
+}
+
 func InitDB() *gorm.DB {
+	db := ConnectToDb()
+
+	log.Info("MySQL 数据库连接成功！")
+
+	afterInitDB(db) // Perform post-initialization tasks
+	return db
+}
+
+func ConnectToDb() *gorm.DB {
 	db, err := gorm.Open(mysql.Open(renderDsn()), renderConfig())
 	if err != nil {
 		panic("failed to connect database: " + err.Error())
 	}
 	setConnPool(db, 30, 100, 10*time.Minute)
-
-	log.Info("MySQL 数据库连接成功！")
-
-	afterInitDB(db) // Perform post-initialization tasks
 	return db
 }
 
@@ -75,22 +91,24 @@ func afterInitDB(db *gorm.DB) {
 }
 
 func migrateIfNeeded(db *gorm.DB) {
-	if !viper.GetBool("mysql.migrate") {
+	if !viper.GetBool("mysql.Migrate") {
 		log.Info("Skipping database migration as per configuration.")
 		return
 	}
 	log.Info("Starting database migration...")
 	// Here you would typically call your migration logic, e.g.:
-	migrateList := []interface{}{
-		model.PipeCfg{},
-		model.PipeExec{},
-		model.PipeVersion{},
-		model.NodeCfg{},
-		model.NodeExec{},
+	Migrate(db, DbModels...)
+
+}
+
+func Migrate(db *gorm.DB, models ...interface{}) {
+	if db == nil || len(models) == 0 {
+		return
 	}
-	err := db.AutoMigrate(migrateList...) // Perform migrations for the specified models
+	err := db.AutoMigrate(models...)
 	if err != nil {
 		panic("failed to migrate database: " + err.Error())
 	}
 	log.Info("Database migration completed successfully.")
+	return
 }

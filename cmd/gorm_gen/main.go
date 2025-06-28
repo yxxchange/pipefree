@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/yxxchange/pipefree/infra/dal/model"
+	"github.com/yxxchange/pipefree/infra/dal"
 	"gorm.io/gen"
 )
 
@@ -13,14 +13,7 @@ func main() {
 		FieldNullable: true,
 	})
 
-	ApplyList := []interface{}{
-		model.PipeCfg{},
-		model.PipeExec{},
-		model.PipeVersion{},
-		model.NodeCfg{},
-		model.NodeExec{},
-	}
-	g.ApplyBasic(ApplyList...)
+	g.ApplyBasic(dal.DbModels...)
 
 	// Execute the generator
 	g.Execute()

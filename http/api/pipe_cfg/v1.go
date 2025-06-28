@@ -23,8 +23,8 @@ func Get(c *gin.Context) {
 	var req PipeReqParam
 	err := c.ShouldBindUri(&req)
 	if err != nil {
-		log.Errorf("Get pipe configuration failed, invalid request parameters: %v", err)
-		common.ResponseError(c, -1, "Invalid request parameters")
+		log.Errorf("get pipe configuration failed, invalid request parameters: %v", err)
+		common.ResponseError(c, -1, "invalid request parameters")
 		return
 	}
 	cfg, err := pipe_cfg.NewService(c).GetById(req.PipeId)
@@ -38,13 +38,13 @@ func Get(c *gin.Context) {
 func Create(c *gin.Context) {
 	var req PipeReqParam
 	if err := c.ShouldBind(&req); err != nil {
-		log.Errorf("Create pipe configuration failed, invalid request parameters: %v", err)
-		common.ResponseError(c, -1, "Invalid request parameters")
+		log.Errorf("create pipe configuration failed, invalid request parameters: %v", err)
+		common.ResponseError(c, -1, "invalid request parameters")
 		return
 	}
 	if err := pipe_cfg.NewService(c).Create(req.View.PipeCfg, req.View.NodeCfgList); err != nil {
 		common.ResponseError(c, pipe_cfg.ErrorCode, err.Error())
 		return
 	}
-	common.ResponseOk(c, "Pipe configuration created successfully")
+	common.ResponseOk(c, "pipe configuration created successfully")
 }

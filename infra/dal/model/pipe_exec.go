@@ -10,7 +10,7 @@ const (
 func NewPipeExec(pipe *PipeCfg) *PipeExec {
 	return &PipeExec{
 		Name:      pipe.Name,
-		Namespace: pipe.Namespace,
+		Space:     pipe.Space,
 		PipeCfgId: pipe.Id,
 		Version:   pipe.Version,
 		Graph:     *pipe.Graph,
@@ -22,7 +22,7 @@ func NewPipeExec(pipe *PipeCfg) *PipeExec {
 type PipeExec struct {
 	Basic
 	Name      string  `json:"name" gorm:"column:name"`                   // 流水线名称
-	Namespace string  `json:"namespace" gorm:"column:namespace"`         // 流水线命名空间
+	Space     string  `json:"space" gorm:"column:space"`                 // 流水线项目空间
 	PipeCfgId int64   `json:"pipe_cfg_id" gorm:"column:pipe_cfg_id"`     // 流水线配置ID
 	Version   int     `json:"version" gorm:"column:version"`             // 流水线版本号
 	Graph     Graph   `json:"graph" gorm:"column:graph;type:json"`       // 流水线图内容

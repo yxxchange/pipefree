@@ -9,7 +9,7 @@ import (
 const KeyTemplate = "/namespace/%s/name/%s/version/%d/exec_id/%d"
 
 func KeyGen(node *model.NodeExec) string {
-	return fmt.Sprintf(KeyTemplate, node.Namespace, node.Name, node.PipeVersion, node.Id)
+	return fmt.Sprintf(KeyTemplate, node.PipeName, node.Name, node.PipeVersion, node.Id)
 }
 
 func ValueGen(node *model.NodeExec) (string, error) {

@@ -88,6 +88,22 @@ func (s *Service) Create(pipe model.PipeCfg, nodes []model.NodeCfg) error {
 	return err
 }
 
+func (s *Service) Validate(pipe model.PipeCfg, nodes []model.NodeCfg) error {
+	ns := pipe.Space
+	if ns == "" {
+		return fmt.Errorf("pipe namespace cannot be empty")
+	}
+	for _, node := range nodes {
+		if node.Namespace == "" {
+			continue
+		}
+		if node.Namespace != ns {
+			return fmt.Errorf("node %s namespace %s does not match pipe namespace %s", node.Name, node.Namespace, ns)
+		}
+	}
+	return nil
+}
+
 func (s *Service) Update(pipeCfg *model.PipeCfg) error {
 	if err := s.pipeCfg.Save(pipeCfg); err != nil {
 		return err

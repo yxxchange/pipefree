@@ -32,6 +32,8 @@ func newPipeExec(db *gorm.DB, opts ...gen.DOOption) pipeExec {
 	_pipeExec.CreatedAt = field.NewInt64(tableName, "created_at")
 	_pipeExec.UpdatedAt = field.NewInt64(tableName, "updated_at")
 	_pipeExec.IsDel = field.NewBool(tableName, "is_del")
+	_pipeExec.Name = field.NewString(tableName, "name")
+	_pipeExec.Space = field.NewString(tableName, "space")
 	_pipeExec.PipeCfgId = field.NewInt64(tableName, "pipe_cfg_id")
 	_pipeExec.Version = field.NewInt(tableName, "version")
 	_pipeExec.Graph = field.NewField(tableName, "graph")
@@ -51,6 +53,8 @@ type pipeExec struct {
 	CreatedAt field.Int64
 	UpdatedAt field.Int64
 	IsDel     field.Bool
+	Name      field.String
+	Space     field.String
 	PipeCfgId field.Int64
 	Version   field.Int
 	Graph     field.Field
@@ -76,6 +80,8 @@ func (p *pipeExec) updateTableName(table string) *pipeExec {
 	p.CreatedAt = field.NewInt64(table, "created_at")
 	p.UpdatedAt = field.NewInt64(table, "updated_at")
 	p.IsDel = field.NewBool(table, "is_del")
+	p.Name = field.NewString(table, "name")
+	p.Space = field.NewString(table, "space")
 	p.PipeCfgId = field.NewInt64(table, "pipe_cfg_id")
 	p.Version = field.NewInt(table, "version")
 	p.Graph = field.NewField(table, "graph")
@@ -105,11 +111,13 @@ func (p *pipeExec) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *pipeExec) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 9)
+	p.fieldMap = make(map[string]field.Expr, 11)
 	p.fieldMap["id"] = p.Id
 	p.fieldMap["created_at"] = p.CreatedAt
 	p.fieldMap["updated_at"] = p.UpdatedAt
 	p.fieldMap["is_del"] = p.IsDel
+	p.fieldMap["name"] = p.Name
+	p.fieldMap["space"] = p.Space
 	p.fieldMap["pipe_cfg_id"] = p.PipeCfgId
 	p.fieldMap["version"] = p.Version
 	p.fieldMap["graph"] = p.Graph

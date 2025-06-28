@@ -33,10 +33,14 @@ func newNodeCfg(db *gorm.DB, opts ...gen.DOOption) nodeCfg {
 	_nodeCfg.UpdatedAt = field.NewInt64(tableName, "updated_at")
 	_nodeCfg.IsDel = field.NewBool(tableName, "is_del")
 	_nodeCfg.Name = field.NewString(tableName, "name")
+	_nodeCfg.Kind = field.NewString(tableName, "kind")
+	_nodeCfg.Namespace = field.NewString(tableName, "namespace")
+	_nodeCfg.PipeSpace = field.NewString(tableName, "pipe_space")
+	_nodeCfg.PipeName = field.NewString(tableName, "pipe_name")
 	_nodeCfg.Desc = field.NewString(tableName, "desc")
 	_nodeCfg.PipeCfgId = field.NewInt64(tableName, "pipe_cfg_id")
 	_nodeCfg.InDegree = field.NewInt(tableName, "in_degree")
-	_nodeCfg.Spec = field.NewBytes(tableName, "spec")
+	_nodeCfg.Spec = field.NewField(tableName, "spec")
 
 	_nodeCfg.fillFieldMap()
 
@@ -52,10 +56,14 @@ type nodeCfg struct {
 	UpdatedAt field.Int64
 	IsDel     field.Bool
 	Name      field.String
+	Kind      field.String
+	Namespace field.String
+	PipeSpace field.String
+	PipeName  field.String
 	Desc      field.String
 	PipeCfgId field.Int64
 	InDegree  field.Int
-	Spec      field.Bytes
+	Spec      field.Field
 
 	fieldMap map[string]field.Expr
 }
@@ -77,10 +85,14 @@ func (n *nodeCfg) updateTableName(table string) *nodeCfg {
 	n.UpdatedAt = field.NewInt64(table, "updated_at")
 	n.IsDel = field.NewBool(table, "is_del")
 	n.Name = field.NewString(table, "name")
+	n.Kind = field.NewString(table, "kind")
+	n.Namespace = field.NewString(table, "namespace")
+	n.PipeSpace = field.NewString(table, "pipe_space")
+	n.PipeName = field.NewString(table, "pipe_name")
 	n.Desc = field.NewString(table, "desc")
 	n.PipeCfgId = field.NewInt64(table, "pipe_cfg_id")
 	n.InDegree = field.NewInt(table, "in_degree")
-	n.Spec = field.NewBytes(table, "spec")
+	n.Spec = field.NewField(table, "spec")
 
 	n.fillFieldMap()
 
@@ -105,12 +117,16 @@ func (n *nodeCfg) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (n *nodeCfg) fillFieldMap() {
-	n.fieldMap = make(map[string]field.Expr, 9)
+	n.fieldMap = make(map[string]field.Expr, 13)
 	n.fieldMap["id"] = n.Id
 	n.fieldMap["created_at"] = n.CreatedAt
 	n.fieldMap["updated_at"] = n.UpdatedAt
 	n.fieldMap["is_del"] = n.IsDel
 	n.fieldMap["name"] = n.Name
+	n.fieldMap["kind"] = n.Kind
+	n.fieldMap["namespace"] = n.Namespace
+	n.fieldMap["pipe_space"] = n.PipeSpace
+	n.fieldMap["pipe_name"] = n.PipeName
 	n.fieldMap["desc"] = n.Desc
 	n.fieldMap["pipe_cfg_id"] = n.PipeCfgId
 	n.fieldMap["in_degree"] = n.InDegree

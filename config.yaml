@@ -36,6 +36,6 @@ etcd:
     - http://127.0.0.1:2379
   timeout: 30 # seconds
   auth:
-    username: root
-    password: 123456
+    username:
+    password: 
 

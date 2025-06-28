@@ -20,8 +20,9 @@ const (
 func NewNodeExec(node *NodeCfg, pipe *PipeExec) *NodeExec {
 	return &NodeExec{
 		Name:        node.Name,
-		Namespace:   pipe.Namespace,
-		PipeName:    pipe.Name,
+		Namespace:   node.Namespace,
+		PipeSpace:   node.PipeSpace,
+		PipeName:    node.PipeName,
 		PipeVersion: pipe.Version,
 		NodeCfgId:   node.Id,
 		PipeCfgId:   node.PipeCfgId,
@@ -37,7 +38,9 @@ func NewNodeExec(node *NodeCfg, pipe *PipeExec) *NodeExec {
 type NodeExec struct {
 	Basic
 	Name        string     `json:"name" gorm:"column:name"`                 // 节点名称
-	Namespace   string     `json:"namespace" gorm:"column:namespace"`       // 节点命名空间
+	Kind        string     `json:"kind" gorm:"column:kind"`                 // 节点类型
+	Namespace   string     `json:"namespace" gorm:"column:namespace"`       // 节点命名空间, 如果为空则表示全局节点，如果有值，只能在对应ns的pipe
+	PipeSpace   string     `json:"pipe_space" gorm:"column:pipe_space"`     // 流水线命名空间
 	PipeName    string     `json:"pipe_name" gorm:"column:pipe_name"`       // 流水线名称
 	PipeVersion int        `json:"pipe_version" gorm:"column:pipe_version"` // 流水线版本
 	NodeCfgId   int64      `json:"node_cfg_id" gorm:"column:node_cfg_id"`   // 节点配置ID

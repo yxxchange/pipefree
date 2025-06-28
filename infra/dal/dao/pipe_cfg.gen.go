@@ -33,7 +33,7 @@ func newPipeCfg(db *gorm.DB, opts ...gen.DOOption) pipeCfg {
 	_pipeCfg.UpdatedAt = field.NewInt64(tableName, "updated_at")
 	_pipeCfg.IsDel = field.NewBool(tableName, "is_del")
 	_pipeCfg.Name = field.NewString(tableName, "name")
-	_pipeCfg.Namespace = field.NewString(tableName, "namespace")
+	_pipeCfg.Space = field.NewString(tableName, "space")
 	_pipeCfg.Desc = field.NewString(tableName, "desc")
 	_pipeCfg.Version = field.NewInt(tableName, "version")
 	_pipeCfg.EnvVars = field.NewField(tableName, "env_vars")
@@ -53,7 +53,7 @@ type pipeCfg struct {
 	UpdatedAt field.Int64
 	IsDel     field.Bool
 	Name      field.String
-	Namespace field.String
+	Space     field.String
 	Desc      field.String
 	Version   field.Int
 	EnvVars   field.Field
@@ -79,7 +79,7 @@ func (p *pipeCfg) updateTableName(table string) *pipeCfg {
 	p.UpdatedAt = field.NewInt64(table, "updated_at")
 	p.IsDel = field.NewBool(table, "is_del")
 	p.Name = field.NewString(table, "name")
-	p.Namespace = field.NewString(table, "namespace")
+	p.Space = field.NewString(table, "space")
 	p.Desc = field.NewString(table, "desc")
 	p.Version = field.NewInt(table, "version")
 	p.EnvVars = field.NewField(table, "env_vars")
@@ -114,7 +114,7 @@ func (p *pipeCfg) fillFieldMap() {
 	p.fieldMap["updated_at"] = p.UpdatedAt
 	p.fieldMap["is_del"] = p.IsDel
 	p.fieldMap["name"] = p.Name
-	p.fieldMap["namespace"] = p.Namespace
+	p.fieldMap["space"] = p.Space
 	p.fieldMap["desc"] = p.Desc
 	p.fieldMap["version"] = p.Version
 	p.fieldMap["env_vars"] = p.EnvVars

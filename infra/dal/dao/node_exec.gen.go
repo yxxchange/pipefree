@@ -33,11 +33,16 @@ func newNodeExec(db *gorm.DB, opts ...gen.DOOption) nodeExec {
 	_nodeExec.UpdatedAt = field.NewInt64(tableName, "updated_at")
 	_nodeExec.IsDel = field.NewBool(tableName, "is_del")
 	_nodeExec.Name = field.NewString(tableName, "name")
+	_nodeExec.Kind = field.NewString(tableName, "kind")
+	_nodeExec.Namespace = field.NewString(tableName, "namespace")
+	_nodeExec.PipeSpace = field.NewString(tableName, "pipe_space")
+	_nodeExec.PipeName = field.NewString(tableName, "pipe_name")
+	_nodeExec.PipeVersion = field.NewInt(tableName, "pipe_version")
 	_nodeExec.NodeCfgId = field.NewInt64(tableName, "node_cfg_id")
 	_nodeExec.PipeCfgId = field.NewInt64(tableName, "pipe_cfg_id")
 	_nodeExec.PipeExecId = field.NewInt64(tableName, "pipe_exec_id")
 	_nodeExec.InDegree = field.NewInt(tableName, "in_degree")
-	_nodeExec.Spec = field.NewBytes(tableName, "spec")
+	_nodeExec.Spec = field.NewField(tableName, "spec")
 	_nodeExec.Phase = field.NewField(tableName, "status")
 
 	_nodeExec.fillFieldMap()
@@ -48,18 +53,23 @@ func newNodeExec(db *gorm.DB, opts ...gen.DOOption) nodeExec {
 type nodeExec struct {
 	nodeExecDo nodeExecDo
 
-	ALL        field.Asterisk
-	Id         field.Int64
-	CreatedAt  field.Int64
-	UpdatedAt  field.Int64
-	IsDel      field.Bool
-	Name       field.String
-	NodeCfgId  field.Int64
-	PipeCfgId  field.Int64
-	PipeExecId field.Int64
-	InDegree   field.Int
-	Spec       field.Bytes
-	Phase      field.Field
+	ALL         field.Asterisk
+	Id          field.Int64
+	CreatedAt   field.Int64
+	UpdatedAt   field.Int64
+	IsDel       field.Bool
+	Name        field.String
+	Kind        field.String
+	Namespace   field.String
+	PipeSpace   field.String
+	PipeName    field.String
+	PipeVersion field.Int
+	NodeCfgId   field.Int64
+	PipeCfgId   field.Int64
+	PipeExecId  field.Int64
+	InDegree    field.Int
+	Spec        field.Field
+	Phase       field.Field
 
 	fieldMap map[string]field.Expr
 }
@@ -81,11 +91,16 @@ func (n *nodeExec) updateTableName(table string) *nodeExec {
 	n.UpdatedAt = field.NewInt64(table, "updated_at")
 	n.IsDel = field.NewBool(table, "is_del")
 	n.Name = field.NewString(table, "name")
+	n.Kind = field.NewString(table, "kind")
+	n.Namespace = field.NewString(table, "namespace")
+	n.PipeSpace = field.NewString(table, "pipe_space")
+	n.PipeName = field.NewString(table, "pipe_name")
+	n.PipeVersion = field.NewInt(table, "pipe_version")
 	n.NodeCfgId = field.NewInt64(table, "node_cfg_id")
 	n.PipeCfgId = field.NewInt64(table, "pipe_cfg_id")
 	n.PipeExecId = field.NewInt64(table, "pipe_exec_id")
 	n.InDegree = field.NewInt(table, "in_degree")
-	n.Spec = field.NewBytes(table, "spec")
+	n.Spec = field.NewField(table, "spec")
 	n.Phase = field.NewField(table, "status")
 
 	n.fillFieldMap()
@@ -111,12 +126,17 @@ func (n *nodeExec) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (n *nodeExec) fillFieldMap() {
-	n.fieldMap = make(map[string]field.Expr, 11)
+	n.fieldMap = make(map[string]field.Expr, 16)
 	n.fieldMap["id"] = n.Id
 	n.fieldMap["created_at"] = n.CreatedAt
 	n.fieldMap["updated_at"] = n.UpdatedAt
 	n.fieldMap["is_del"] = n.IsDel
 	n.fieldMap["name"] = n.Name
+	n.fieldMap["kind"] = n.Kind
+	n.fieldMap["namespace"] = n.Namespace
+	n.fieldMap["pipe_space"] = n.PipeSpace
+	n.fieldMap["pipe_name"] = n.PipeName
+	n.fieldMap["pipe_version"] = n.PipeVersion
 	n.fieldMap["node_cfg_id"] = n.NodeCfgId
 	n.fieldMap["pipe_cfg_id"] = n.PipeCfgId
 	n.fieldMap["pipe_exec_id"] = n.PipeExecId
