@@ -32,7 +32,7 @@ func Get(c *gin.Context) {
 		common.ResponseError(c, pipe_cfg.ErrorCode, err.Error())
 		return
 	}
-	common.ResponseOk(c, Convert(*cfg))
+	common.ResponseOk(c, Convert(cfg))
 }
 
 func Create(c *gin.Context) {
