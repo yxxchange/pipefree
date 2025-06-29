@@ -81,8 +81,7 @@ type EnvVar struct {
 }
 
 type Graph struct {
-	Vertexes []Vertex `json:"vertexes" yaml:"vertexes"` // 图的顶点集合
-	Edges    []Edge   `json:"edges" yaml:"edges"`       // 图的边集合
+	Edges []Edge `json:"edges" yaml:"edges"` // 图的边集合
 }
 
 func (g *Graph) Scan(value interface{}) (err error) {
@@ -108,12 +107,7 @@ func (g *Graph) Value() (value driver.Value, err error) {
 	return value, nil
 }
 
-type Vertex struct {
-	Name     string   `json:"name" yaml:"name"` // 节点名称
-	InDegree int      `json:"-" yaml:"-"`       // 入度
-	Next     []string `json:"-" yaml:"-"`       // 下一个节点名称列表
-}
-
+// Edge represents a directed edge in the graph.
 type Edge struct {
 	From string `json:"from" yaml:"from"` // 边的起点
 	To   string `json:"to" yaml:"to"`     // 边的终点

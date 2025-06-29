@@ -7,6 +7,7 @@ import (
 	"github.com/yxxchange/pipefree/infra/dal/dao"
 	"github.com/yxxchange/pipefree/infra/dal/model"
 	"github.com/yxxchange/pipefree/service/graph"
+	"github.com/yxxchange/pipefree/service/pipe_perm"
 )
 
 const ErrorCode = 10001
@@ -35,50 +36,25 @@ func (s *Service) GetById(pipeId int64) (*model.PipeCfg, error) {
 	return pipeCfg, nil
 }
 
-func (s *Service) Create(pipe model.PipeCfg, nodes []model.NodeCfg) error {
-	dag, err := graph.Extract(pipe.Graph)
-	if err != nil {
-		log.Errorf("create pipe configuration failed, extract graph failed: %v", err)
+func (s *Service) Create(pipe *model.PipeCfg, nodes []*model.NodeCfg) error {
+	component := NewPipeComponent(pipe, nodes)
+	if err := s.Validate(component); err != nil {
+		log.Errorf("create pipe configuration failed, validate failed: %v", err)
 		return err
 	}
-	err = graph.IsDAG(dag)
-	if err != nil {
-		log.Errorf("create pipe configuration failed, graph is not a DAG: %v", err)
-		return err
-	}
-	// Set the pipe configuration ID for each node
-	nodeCfgMap := make(map[string]*model.NodeCfg)
-	nodeCfgList := make([]*model.NodeCfg, 0)
-	for _, node := range nodes {
-		_, exists := nodeCfgMap[node.Name]
-		if exists {
-			return fmt.Errorf("create pipe configuration failed, duplicate node name: %s", node.Name)
-		}
-		_, exists = dag.VertexMap[node.Name]
-		if !exists {
-			return fmt.Errorf("create pipe configuration failed, node %s not found in graph", node.Name)
-		}
-		nodeCfgMap[node.Name] = &node
-		nodeCfgList = append(nodeCfgList, &node)
-	}
 
-	for name, vertex := range dag.VertexMap {
-		_, exists := nodeCfgMap[name]
-		if !exists {
-			return fmt.Errorf("create pipe configuration failed, node %s not found in node configurations", name)
-		}
-		nodeCfgMap[name].InDegree = vertex.InDegree
+	for name, vertex := range component.Graph.VertexMap {
+		component.NodeMap[name].InDegree = vertex.InDegree
 	}
-
-	err = s.Transaction(func(tx *dao.Query) error {
-		err = tx.PipeCfg.WithContext(s.ctx).Create(&pipe)
+	err := s.Transaction(func(tx *dao.Query) error {
+		err := tx.PipeCfg.WithContext(s.ctx).Create(component.Pipe)
 		if err != nil {
 			return fmt.Errorf("create pipe configuration failed: %w", err)
 		}
-		for i := range nodeCfgList {
-			nodeCfgList[i].PipeCfgId = pipe.Id
+		for i := range component.NodeList {
+			component.NodeList[i].PipeCfgId = pipe.Id
 		}
-		err = tx.NodeCfg.WithContext(s.ctx).CreateInBatches(nodeCfgList, 100)
+		err = tx.NodeCfg.WithContext(s.ctx).CreateInBatches(component.NodeList, 100)
 		if err != nil {
 			return fmt.Errorf("create pipe configuration failed, create node configurations failed: %w", err)
 		}
@@ -88,17 +64,62 @@ func (s *Service) Create(pipe model.PipeCfg, nodes []model.NodeCfg) error {
 	return err
 }
 
-func (s *Service) Validate(pipe model.PipeCfg, nodes []model.NodeCfg) error {
-	ns := pipe.Space
-	if ns == "" {
-		return fmt.Errorf("pipe namespace cannot be empty")
+func (s *Service) Validate(component *PipeComponent) error {
+	validateFlow := []func(*PipeComponent) error{
+		s.nodeNameMustUnique,
+		s.validatePermission,
+		s.validateGraph,
+		s.mustBeDAG,
+		s.validateNodeGraphConsistency,
 	}
-	for _, node := range nodes {
-		if node.Namespace == "" {
-			continue
+	for _, validate := range validateFlow {
+		if err := validate(component); err != nil {
+			log.Errorf("pipe configuration validation failed: %v", err)
+			return err
 		}
-		if node.Namespace != ns {
-			return fmt.Errorf("node %s namespace %s does not match pipe namespace %s", node.Name, node.Namespace, ns)
+	}
+	return nil
+}
+
+func (s *Service) nodeNameMustUnique(component *PipeComponent) error {
+	if len(component.NodeList) > len(component.NodeMap) {
+		return fmt.Errorf("duplicate node names found in node configuration")
+	}
+	return nil
+}
+
+func (s *Service) validatePermission(component *PipeComponent) error {
+	return pipe_perm.NewService(s.ctx).PermissionBatchCheck(
+		component.Pipe.Space,
+		component.Namespaces,
+		pipe_perm.PipePermissionBind,
+	)
+}
+
+func (s *Service) validateGraph(component *PipeComponent) error {
+	for name := range component.Graph.VertexMap {
+		if _, exists := component.NodeMap[name]; !exists {
+			return fmt.Errorf("create pipe configuration failed, node %s not found in node configurations", name)
+		}
+	}
+	return nil
+}
+
+func (s *Service) mustBeDAG(component *PipeComponent) error {
+	return graph.IsDAG(component.Graph)
+}
+
+func (s *Service) validateNodeGraphConsistency(component *PipeComponent) error {
+	for _, node := range component.NodeList {
+		_, exists := component.Graph.VertexMap[node.Name]
+		if !exists {
+			return fmt.Errorf("create pipe configuration failed, node %s not found in graph", node.Name)
+		}
+	}
+	for name := range component.Graph.VertexMap {
+		_, exists := component.NodeMap[name]
+		if !exists {
+			return fmt.Errorf("create pipe configuration failed, node %s not found in node configurations", name)
 		}
 	}
 	return nil

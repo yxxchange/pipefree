@@ -4,11 +4,11 @@ import "github.com/yxxchange/pipefree/infra/dal/model"
 
 // PipeView 流水线视图模型
 type PipeView struct {
-	PipeCfg     model.PipeCfg   `yaml:"pipe" json:"pipe"` // 流水线配置
-	NodeCfgList []model.NodeCfg `yaml:"nodes" json:"nodes"`
+	PipeCfg     *model.PipeCfg   `yaml:"pipe" json:"pipe"` // 流水线配置
+	NodeCfgList []*model.NodeCfg `yaml:"nodes" json:"nodes"`
 }
 
-func Convert(cfg model.PipeCfg) PipeView {
+func Convert(cfg *model.PipeCfg) PipeView {
 	return PipeView{
 		PipeCfg: cfg,
 	}

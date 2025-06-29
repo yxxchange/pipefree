@@ -6,7 +6,13 @@ import (
 	"github.com/yxxchange/pipefree/infra/dal/model"
 )
 
-type Vertexes []*model.Vertex
+type Vertexes []*Vertex
+
+type Vertex struct {
+	Name     string              `json:"-" yaml:"-"` // 节点名称
+	InDegree int                 `json:"-" yaml:"-"` // 入度
+	Next     map[string]struct{} `json:"-" yaml:"-"` // 下一个节点名称列表
+}
 
 var _ heap.Interface = (*Vertexes)(nil)
 
@@ -26,7 +32,7 @@ func (vs *Vertexes) Push(x interface{}) {
 	if x == nil {
 		return
 	}
-	vertex, ok := x.(*model.Vertex)
+	vertex, ok := x.(*Vertex)
 	if !ok {
 		panic(fmt.Sprintf("expected *model.Vertex, got %T", x))
 	}
@@ -42,19 +48,23 @@ func (vs *Vertexes) Pop() interface{} {
 	return vertex
 }
 
-type DAG struct {
-	VertexMapForSort map[string]*model.Vertex
-	VertexMap        map[string]model.Vertex // for compatibility with old code
+type Graph struct {
+	VertexMapForSort  map[string]*Vertex
+	VertexListForSort []*Vertex
+	VertexMap         map[string]Vertex // for compatibility with old code
 }
 
-func IsDAG(dag *DAG) error {
+func IsDAG(g *Graph) error {
+	if g == nil {
+		return fmt.Errorf("graph is nil")
+	}
 	// must one vertex with in-degree 0
-	if len(dag.VertexMapForSort) == 0 {
+	if len(g.VertexMapForSort) == 0 {
 		return fmt.Errorf("graph empty")
 	}
 
 	initialVertices := Vertexes{}
-	for _, vertex := range dag.VertexMapForSort {
+	for _, vertex := range g.VertexMapForSort {
 		if vertex.InDegree == 0 {
 			initialVertices = append(initialVertices, vertex)
 		}
@@ -65,13 +75,13 @@ func IsDAG(dag *DAG) error {
 	heap.Init(&initialVertices)
 	count := 0
 	for len(initialVertices) > 0 {
-		vertex := heap.Pop(&initialVertices).(*model.Vertex)
+		vertex := heap.Pop(&initialVertices).(*Vertex)
 		if vertex.InDegree != 0 {
 			return fmt.Errorf("error in topology sort, vertex %s has non-zero in-degree: %d", vertex.Name, vertex.InDegree)
 		}
 		count++
-		for _, next := range vertex.Next {
-			nextVertex, exists := dag.VertexMapForSort[next]
+		for next := range vertex.Next {
+			nextVertex, exists := g.VertexMapForSort[next]
 			if !exists {
 				continue
 			}
@@ -81,42 +91,44 @@ func IsDAG(dag *DAG) error {
 			}
 		}
 	}
-	if count != len(dag.VertexMapForSort) {
+	if count != len(g.VertexMapForSort) {
 		return fmt.Errorf("graph invalide, cycle exists in this graph")
 	}
 	return nil
 }
 
-func Extract(g *model.Graph) (*DAG, error) {
-	dag := &DAG{
-		VertexMapForSort: make(map[string]*model.Vertex),
-		VertexMap:        make(map[string]model.Vertex),
-	}
+func Extract(g *model.Graph) *Graph {
 	if g == nil {
-		return nil, fmt.Errorf("graph is empty")
-	}
-	for i, vertex := range g.Vertexes {
-		if _, exists := dag.VertexMapForSort[vertex.Name]; exists {
-			return nil, fmt.Errorf("graph invalide, duplicate vertex name: %s", vertex.Name)
-		}
-		dag.VertexMapForSort[vertex.Name] = &g.Vertexes[i]
-	}
-	for _, edge := range g.Edges {
-		if _, exists := dag.VertexMapForSort[edge.From]; !exists {
-			return nil, fmt.Errorf("graph invalide, edge from vertex not found: %s", edge.From)
-		}
-		if _, exists := dag.VertexMapForSort[edge.To]; !exists {
-			return nil, fmt.Errorf("graph invalide, edge to vertex not found: %s", edge.To)
-		}
-		if edge.From == edge.To {
-			return nil, fmt.Errorf("graph invalide, self-loop detected at vertex: %s", edge.From)
-		}
-		dag.VertexMapForSort[edge.To].InDegree++
-		dag.VertexMapForSort[edge.From].Next = append(dag.VertexMapForSort[edge.From].Next, edge.To)
+		return nil
 	}
 
-	for name, vertex := range dag.VertexMapForSort {
-		dag.VertexMap[name] = *vertex
+	graph := &Graph{
+		VertexMapForSort: make(map[string]*Vertex),
+		VertexMap:        make(map[string]Vertex),
 	}
-	return dag, nil
+	for _, vertex := range g.Edges {
+		if _, exists := graph.VertexMapForSort[vertex.From]; !exists {
+			graph.VertexMapForSort[vertex.From] = &Vertex{
+				Name:     vertex.From,
+				InDegree: 0,
+				Next:     make(map[string]struct{}),
+			}
+			graph.VertexListForSort = append(graph.VertexListForSort, graph.VertexMapForSort[vertex.From])
+		}
+		if _, exists := graph.VertexMapForSort[vertex.To]; !exists {
+			graph.VertexMapForSort[vertex.To] = &Vertex{
+				Name:     vertex.To,
+				InDegree: 0,
+				Next:     make(map[string]struct{}),
+			}
+			graph.VertexListForSort = append(graph.VertexListForSort, graph.VertexMapForSort[vertex.To])
+		}
+		graph.VertexMapForSort[vertex.To].InDegree++                     // Increment in-degree for the destination vertex
+		graph.VertexMapForSort[vertex.From].Next[vertex.To] = struct{}{} // Add the destination vertex to the next map of the source vertex
+	}
+
+	for name, vertex := range graph.VertexMapForSort {
+		graph.VertexMap[name] = *vertex
+	}
+	return graph
 }
