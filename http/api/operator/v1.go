@@ -1,6 +1,9 @@
 package operator
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/yxxchange/pipefree/http/common"
+)
 
 const (
 	routeGroup = "/operator"
@@ -9,26 +12,16 @@ const (
 func RegisterV1(router *gin.RouterGroup) {
 	group := router.Group(routeGroup)
 	{
-		group.GET("namespace/:namespace/name/:name", ListAndWatch)
+		group.GET("/namespace/:namespace/name/:name/kind/:kind", Watch)
 	}
 }
 
-func ListAndWatch(c *gin.Context) {
-	namespace := c.Param("namespace")
-	name := c.Param("name")
-
-	if namespace == "" || name == "" {
-		c.JSON(400, gin.H{"error": "namespace and name are required"})
+func Watch(c *gin.Context) {
+	var req WatchReq
+	if err := c.ShouldBindUri(&req); err != nil {
+		common.ResponseError(c, -1, err.Error())
 		return
 	}
 
-	// Here you would typically call a service to list and watch the operators.
-	// For now, we'll just return a mock response.
-	response := gin.H{
-		"namespace": namespace,
-		"name":      name,
-		"status":    "active",
-	}
-
-	c.JSON(200, response)
+	common.ResponseOk(c, nil)
 }

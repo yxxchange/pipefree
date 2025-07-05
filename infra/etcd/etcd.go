@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"github.com/yxxchange/pipefree/helper/log"
-	"go.etcd.io/etcd/api/v3/mvccpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"time"
 )
@@ -119,23 +118,23 @@ func GetWithPrefix(ctx context.Context, prefix string) (map[string]Response, err
 	return result, nil
 }
 
+// Transfer 事件处理函数类型
+type Transfer func(result *clientv3.WatchResponse)
+
 // Watch 监听指定前缀的变化
-func Watch(ctx context.Context, prefix string, callback func(key, value string, isDelete bool)) {
+func Watch(ctx context.Context, prefix string, transfer Transfer) {
 	rch := cli.Watch(ctx, prefix, clientv3.WithPrefix())
 	for {
 		select {
 		case <-ctx.Done():
+			log.Infof("watch context done for prefix %s", prefix)
 			return
-		case wresp := <-rch:
-			for _, ev := range wresp.Events {
-				var isDelete bool
-				val := string(ev.Kv.Value)
-				if ev.Type == mvccpb.DELETE {
-					isDelete = true
-					val = ""
-				}
-				callback(string(ev.Kv.Key), val, isDelete)
+		case result := <-rch:
+			if result.Canceled {
+				log.Errorf("watch canceled for prefix %s: %v", prefix, result.Err())
+				return
 			}
+			transfer(&result)
 		}
 	}
 }
