@@ -14,10 +14,10 @@ func NewService(ctx context.Context) *Service {
 	}
 }
 
-func (s *Service) Watch(keyPrefix, operatorName string) *EventChannel {
+func (s *Service) Watch(keyPrefix string) *EventChannel {
 	ch := &EventChannel{
 		ch: make(chan Event, 100), // 设置缓冲区大小为100
 	}
-	ServerInstance().Register(keyPrefix, operatorName, ch)
+	GetWatchServer().Register(keyPrefix, ch)
 	return ch
 }

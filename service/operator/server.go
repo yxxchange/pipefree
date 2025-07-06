@@ -12,7 +12,7 @@ import (
 var serverInstance *WatchServer
 var once sync.Once
 
-func ServerInstance() *WatchServer {
+func GetWatchServer() *WatchServer {
 	once.Do(func() {
 		serverInstance = NewWatchServer()
 		go serverInstance.Monitor()
@@ -47,12 +47,7 @@ func (s *WatchServer) Monitor() {
 					delete(s.prefixMap, prefix) // 删除无效的处理器
 					continue
 				}
-				log.Infof("前缀: %s, 监控通道数量: %d", prefix, len(handler.chMap))
-				operators := make([]string, 0, len(handler.chMap))
-				for operatorName := range handler.chMap {
-					operators = append(operators, operatorName)
-				}
-				log.Infof("前缀: %s, 监控操作员: %v", prefix, operators)
+				log.Infof("前缀: %s, 监控通道数量: %d", prefix, len(handler.channels))
 			}
 		case <-s.ctx.Done():
 			return // 退出监控
@@ -61,21 +56,21 @@ func (s *WatchServer) Monitor() {
 }
 
 type WatchHandler struct {
-	lock   sync.RWMutex
-	ctx    context.Context
-	prefix string
-	chMap  map[string]*EventChannel
+	lock     sync.RWMutex
+	ctx      context.Context
+	prefix   string
+	channels []*EventChannel
 }
 
 func NewWatchHandler(ctx context.Context, prefix string) *WatchHandler {
 	return &WatchHandler{
-		ctx:    ctx,
-		prefix: prefix,
-		chMap:  make(map[string]*EventChannel),
+		ctx:      ctx,
+		prefix:   prefix,
+		channels: make([]*EventChannel, 100),
 	}
 }
 
-func (s *WatchServer) Register(prefix, operatorName string, ch *EventChannel) {
+func (s *WatchServer) Register(prefix string, ch *EventChannel) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -83,34 +78,42 @@ func (s *WatchServer) Register(prefix, operatorName string, ch *EventChannel) {
 		s.prefixMap = make(map[string]*WatchHandler)
 	}
 	if handler, exists := s.prefixMap[prefix]; exists {
-		handler.Register(operatorName, ch)
+		handler.Register(ch)
 	} else {
 		s.prefixMap[prefix] = NewWatchHandler(s.ctx, prefix)
-		s.prefixMap[prefix].Register(operatorName, ch)
+		s.prefixMap[prefix].Register(ch)
 	}
 }
 
-func (h *WatchHandler) Register(uuid string, ch *EventChannel) {
+func (h *WatchHandler) Register(ch *EventChannel) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
-	if h.chMap == nil {
-		h.chMap = make(map[string]*EventChannel)
-		go h.Watch() // 启动监听
+	if h.channels == nil {
+		h.channels = make([]*EventChannel, 0, 100) // 初始化通道切片
+		go h.Watch()                               // 启动监听
 	}
-	h.chMap[uuid] = ch
+	h.channels = append(h.channels, ch)
 }
 
 func (h *WatchHandler) Watch() {
 	etcd.Watch(h.ctx, h.prefix, h.Handle)
 }
 
-func (h *WatchHandler) Handle(result *clientv3.WatchResponse) {
+func (h *WatchHandler) Handle(result *clientv3.WatchResponse, closed bool) {
 	h.lock.RLock()
 	defer h.lock.RUnlock()
+	if closed {
+		log.Infof("watch closed for prefix %s", h.prefix)
+		for _, ch := range h.channels {
+			ch.done <- struct{}{}
+		}
+		return
+	}
+
 	for _, e := range result.Events {
 		event := Convert(e)
-		for _, ch := range h.chMap {
+		for _, ch := range h.channels {
 			ch.ch <- event
 		}
 	}

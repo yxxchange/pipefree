@@ -119,10 +119,13 @@ func GetWithPrefix(ctx context.Context, prefix string) (map[string]Response, err
 }
 
 // Transfer 事件处理函数类型
-type Transfer func(result *clientv3.WatchResponse)
+type Transfer func(result *clientv3.WatchResponse, closed bool)
 
 // Watch 监听指定前缀的变化
 func Watch(ctx context.Context, prefix string, transfer Transfer) {
+	defer func() {
+		transfer(&clientv3.WatchResponse{}, true) // 传递一个空的 WatchResponse 表示关闭
+	}()
 	rch := cli.Watch(ctx, prefix, clientv3.WithPrefix())
 	for {
 		select {
@@ -134,7 +137,7 @@ func Watch(ctx context.Context, prefix string, transfer Transfer) {
 				log.Errorf("watch canceled for prefix %s: %v", prefix, result.Err())
 				return
 			}
-			transfer(&result)
+			transfer(&result, false)
 		}
 	}
 }

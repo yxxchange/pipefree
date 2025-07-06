@@ -9,7 +9,21 @@ import (
 )
 
 type EventChannel struct {
-	ch chan Event
+	ch   chan Event
+	done chan struct{}
+}
+
+func (ec *EventChannel) Ch() <-chan Event {
+	return ec.ch
+}
+
+func (ec *EventChannel) Done() <-chan struct{} {
+	return ec.done
+}
+
+func (ec *EventChannel) Close() {
+	close(ec.done) // 关闭done通道
+	close(ec.ch)   // 关闭事件通道
 }
 
 type EventType string
@@ -21,10 +35,32 @@ const (
 )
 
 type Event struct {
-	Type     EventType      `json:"type"`      // 事件类型
-	NodeExec model.NodeExec `json:"node_exec"` // 节点执行信息
-	ErrMsg   string         `json:"err_msg"`   // 错误消息
-	Revision int64          `json:"revision"`  // 事件的版本号
+	Type         EventType      `json:"type"`          // 事件类型
+	NodeExec     model.NodeExec `json:"node_exec"`     // 节点执行信息
+	ErrMsg       string         `json:"err_msg"`       // 错误消息
+	Revision     int64          `json:"revision"`      // 事件的版本号
+	StreamClosed bool           `json:"stream_closed"` // 是否为流关闭事件
+}
+
+func CloseEvent() Event {
+	return Event{
+		Type:         EventTypeUpdate,
+		NodeExec:     model.NodeExec{},
+		ErrMsg:       "",
+		Revision:     0,
+		StreamClosed: true, // 标记为流关闭事件
+	}
+}
+
+func (e *Event) IsStreamClosed() bool {
+	return e.StreamClosed
+}
+
+func (e *Event) Err() error {
+	if e.ErrMsg != "" {
+		return fmt.Errorf(e.ErrMsg)
+	}
+	return nil
 }
 
 func Convert(event *clientv3.Event) Event {
