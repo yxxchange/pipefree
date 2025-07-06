@@ -31,8 +31,8 @@ func TestService_Create(t *testing.T) {
 		t.Fatalf("Failed to read file %s: %v", path, err)
 	}
 	tmp := struct {
-		PipeCfg     model.PipeCfg   `yaml:"pipe"`
-		NodeCfgList []model.NodeCfg `yaml:"nodes"`
+		PipeCfg     *model.PipeCfg   `yaml:"pipe"`
+		NodeCfgList []*model.NodeCfg `yaml:"nodes"`
 	}{}
 	err = serialize.YamlDeserialize(b, &tmp)
 	if err != nil {

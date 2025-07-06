@@ -9,11 +9,11 @@ import (
 )
 
 type EventChannel struct {
-	ch   chan Event
+	ch   chan []byte
 	done chan struct{}
 }
 
-func (ec *EventChannel) Ch() <-chan Event {
+func (ec *EventChannel) Ch() <-chan []byte {
 	return ec.ch
 }
 
@@ -71,11 +71,13 @@ func Convert(event *clientv3.Event) Event {
 		} // 返回空事件或处理错误
 	}
 	var nodeExec model.NodeExec
-	if err := json.Unmarshal(event.Kv.Value, &nodeExec); err != nil {
-		log.Errorf("failed to unmarshal event value: %v", err)
-		return Event{
-			ErrMsg: "failed to unmarshal event value: " + err.Error(),
-		} // 返回空事件或处理错误
+	if event.Kv.Value != nil {
+		if err := json.Unmarshal(event.Kv.Value, &nodeExec); err != nil {
+			log.Errorf("failed to unmarshal event value: %v", err)
+			return Event{
+				ErrMsg: "failed to unmarshal event value: " + err.Error(),
+			} // 返回空事件或处理错误
+		}
 	}
 
 	var eventType EventType

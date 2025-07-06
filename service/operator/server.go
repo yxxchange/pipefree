@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/yxxchange/pipefree/helper/log"
 	"github.com/yxxchange/pipefree/infra/etcd"
 	clientv3 "go.etcd.io/etcd/client/v3"
@@ -64,9 +65,8 @@ type WatchHandler struct {
 
 func NewWatchHandler(ctx context.Context, prefix string) *WatchHandler {
 	return &WatchHandler{
-		ctx:      ctx,
-		prefix:   prefix,
-		channels: make([]*EventChannel, 100),
+		ctx:    ctx,
+		prefix: prefix,
 	}
 }
 
@@ -113,8 +113,13 @@ func (h *WatchHandler) Handle(result *clientv3.WatchResponse, closed bool) {
 
 	for _, e := range result.Events {
 		event := Convert(e)
+		b, err := json.Marshal(event)
+		if err != nil {
+			log.Errorf("failed to marshal event: %v", err)
+			continue // 如果序列化失败，跳过当前事件
+		}
 		for _, ch := range h.channels {
-			ch.ch <- event
+			ch.ch <- b
 		}
 	}
 }

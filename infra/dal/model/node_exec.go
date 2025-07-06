@@ -21,6 +21,8 @@ func NewNodeExec(node *NodeCfg, pipe *PipeExec) *NodeExec {
 	return &NodeExec{
 		Name:        node.Name,
 		Namespace:   node.Namespace,
+		Kind:        node.Kind,
+		Version:     node.Version,
 		PipeSpace:   node.PipeSpace,
 		PipeName:    node.PipeName,
 		PipeVersion: pipe.Version,

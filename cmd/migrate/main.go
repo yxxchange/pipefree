@@ -7,5 +7,5 @@ import (
 
 func main() {
 	config.Init("./config.yaml")
-	dal.Migrate(dal.ConnectToDb(), dal.DbModels)
+	dal.Migrate(dal.ConnectToDb(), dal.DbModels...)
 }

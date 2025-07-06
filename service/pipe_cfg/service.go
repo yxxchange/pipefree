@@ -67,7 +67,7 @@ func (s *Service) Create(pipe *model.PipeCfg, nodes []*model.NodeCfg) error {
 func (s *Service) Validate(component *PipeComponent) error {
 	validateFlow := []func(*PipeComponent) error{
 		s.nodeNameMustUnique,
-		s.validatePermission,
+		// s.validatePermission,
 		s.validateGraph,
 		s.mustBeDAG,
 		s.validateNodeGraphConsistency,
@@ -110,12 +110,6 @@ func (s *Service) mustBeDAG(component *PipeComponent) error {
 }
 
 func (s *Service) validateNodeGraphConsistency(component *PipeComponent) error {
-	for _, node := range component.NodeList {
-		_, exists := component.Graph.VertexMap[node.Name]
-		if !exists {
-			return fmt.Errorf("create pipe configuration failed, node %s not found in graph", node.Name)
-		}
-	}
 	for name := range component.Graph.VertexMap {
 		_, exists := component.NodeMap[name]
 		if !exists {

@@ -1,6 +1,6 @@
 pipe:
   name: demo-pipeline
-  namespace: default
+  space: default
   desc: 一个简单的测试流水线
   version: 1
   env_vars:
@@ -27,6 +27,8 @@ pipe:
         to: node-5
 nodes:
   - name: node-1
+    namespace: default
+    kind: container
     desc: 第一个节点，负责初始化
     pipe_cfg_id: 123
     in_degree: 0
@@ -34,30 +36,40 @@ nodes:
       image: alpine:latest
       command: ["sh", "-c", "echo hello from node1"]
   - name: node-2
+    namespace: default
+    kind: container
     desc: 第二个节点，接收输入并处理
     pipe_cfg_id: 123
     spec:
       image: ubuntu:latest
       command: ["echo", "hello from node2"]
   - name: node-3
+    namespace: default
+    kind: container
     desc: 第三个节点，处理来自node-1的输出
     pipe_cfg_id: 123
     spec:
       image: busybox:latest
       command: ["sh", "-c", "echo hello from node3"]
   - name: node-4
+    namespace: default
+    kind: container
     desc: 第四个节点，处理来自node-2和node-3的输出
     pipe_cfg_id: 123
     spec:
       image: debian:latest
       command: ["sh", "-c", "echo hello from node4"]
   - name: node-5
+    namespace: default
+    kind: container
     desc: 第五个节点，处理来自node-4的输出
     pipe_cfg_id: 123
     spec:
       image: alpine:latest
       command: ["sh", "-c", "echo hello from node5"]
   - name: node-6
+    namespace: default
+    kind: container
     desc: 第六个节点，处理来自node-5的输出
     pipe_cfg_id: 123
     spec:

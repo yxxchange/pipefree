@@ -9,5 +9,5 @@ type PipeExecView struct {
 
 type PipeExecReqParam struct {
 	PipeExecId int64 `uri:"pipe_exec_id" json:"pipe_exec_id" form:"pipe_exec_id"` // 流水线执行ID
-	PipeId     int64 `uri:"pipe_id" json:"pipe_id" form:"pipe_id"`                // 流水线ID
+	PipeId     int64 `uri:"pipe_id" json:"pipe_id" form:"pipe_id" `               // 流水线ID
 }

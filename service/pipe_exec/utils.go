@@ -7,7 +7,7 @@ import (
 )
 
 const KeyTemplate = "/namespace/%s/kind/%s/version/%s/node_exec/%d"
-const KeyPrefixTemplate = "/namespace/%s/kind/%s/version/%s/node_exec/"
+const KeyPrefixTemplate = "/namespace/%s/kind/%s"
 
 func KeyGen(node *model.NodeExec) string {
 	return fmt.Sprintf(KeyTemplate, node.Namespace, node.Kind, node.Version, node.Id)

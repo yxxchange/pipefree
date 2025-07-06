@@ -16,7 +16,7 @@ func NewService(ctx context.Context) *Service {
 
 func (s *Service) Watch(keyPrefix string) *EventChannel {
 	ch := &EventChannel{
-		ch: make(chan Event, 100), // 设置缓冲区大小为100
+		ch: make(chan []byte, 100), // 设置缓冲区大小为100
 	}
 	GetWatchServer().Register(keyPrefix, ch)
 	return ch

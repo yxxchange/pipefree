@@ -13,7 +13,7 @@ const (
 func RegisterV1(router *gin.RouterGroup) {
 	group := router.Group(routeGroup)
 	{
-		group.POST("/:id", Run)
+		group.POST("/:pipe_id", Run)
 	}
 }
 
