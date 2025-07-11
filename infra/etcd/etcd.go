@@ -130,7 +130,7 @@ func Watch(ctx context.Context, prefix string, transfer Transfer) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Infof("watch context done for prefix %s", prefix)
+			log.Infof("etcd watch stream for prefix %s closed: %v", prefix, ctx.Err())
 			return
 		case result := <-rch:
 			if result.Canceled {

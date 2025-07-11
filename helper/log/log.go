@@ -61,25 +61,25 @@ func Debug(msg string) {
 	_logger.Debug(msg)
 }
 func Debugf(format string, args ...interface{}) {
-	_logger.Debugf(format, args)
+	_logger.Debugf(format, args...)
 }
 func Info(msg string) {
 	_logger.Info(msg)
 }
 func Infof(format string, args ...interface{}) {
-	_logger.Infof(format, args)
+	_logger.Infof(format, args...)
 }
 func Error(msg string) {
 	_logger.Error(msg)
 }
 func Errorf(format string, args ...interface{}) {
-	_logger.Errorf(format, args)
+	_logger.Errorf(format, args...)
 }
 func Warn(msg string) {
 	_logger.Error(msg)
 }
 func Warnf(format string, args ...interface{}) {
-	_logger.Warnf(format, args)
+	_logger.Warnf(format, args...)
 }
 
 type Log struct {

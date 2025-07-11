@@ -7,7 +7,6 @@ import (
 	"github.com/yxxchange/pipefree/infra/etcd"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"sync"
-	"time"
 )
 
 var serverInstance *WatchServer
@@ -16,7 +15,6 @@ var once sync.Once
 func GetWatchServer() *WatchServer {
 	once.Do(func() {
 		serverInstance = NewWatchServer()
-		go serverInstance.Monitor()
 	})
 	return serverInstance
 }
@@ -34,43 +32,24 @@ func NewWatchServer() *WatchServer {
 	}
 }
 
-func (s *WatchServer) Monitor() {
-	ticker := time.NewTimer(60 * time.Second)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			s.lock.Lock()
-			log.Infof("当前监控的前缀数量: %d", len(s.prefixMap))
-			for prefix, handler := range s.prefixMap {
-				if handler == nil {
-					log.Warnf("前缀 %s 的处理器为 nil，可能已被删除", prefix)
-					delete(s.prefixMap, prefix) // 删除无效的处理器
-					continue
-				}
-				log.Infof("前缀: %s, 监控通道数量: %d", prefix, len(handler.channels))
-			}
-		case <-s.ctx.Done():
-			return // 退出监控
-		}
-	}
-}
-
 type WatchHandler struct {
 	lock     sync.RWMutex
 	ctx      context.Context
+	cancel   context.CancelFunc
 	prefix   string
-	channels []*EventChannel
+	channels map[string]*EventChannel
 }
 
 func NewWatchHandler(ctx context.Context, prefix string) *WatchHandler {
+	son, cancel := context.WithCancel(ctx)
 	return &WatchHandler{
-		ctx:    ctx,
+		cancel: cancel,
+		ctx:    son,
 		prefix: prefix,
 	}
 }
 
-func (s *WatchServer) Register(prefix string, ch *EventChannel) {
+func (s *WatchServer) Register(prefix, uuid string, ch *EventChannel) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -78,22 +57,49 @@ func (s *WatchServer) Register(prefix string, ch *EventChannel) {
 		s.prefixMap = make(map[string]*WatchHandler)
 	}
 	if handler, exists := s.prefixMap[prefix]; exists {
-		handler.Register(ch)
+		handler.Register(uuid, ch)
 	} else {
 		s.prefixMap[prefix] = NewWatchHandler(s.ctx, prefix)
-		s.prefixMap[prefix].Register(ch)
+		s.prefixMap[prefix].Register(uuid, ch)
 	}
 }
 
-func (h *WatchHandler) Register(ch *EventChannel) {
+func (s *WatchServer) UnRegister(prefix, uuid string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	if handler, exists := s.prefixMap[prefix]; exists {
+		handler.UnRegister(uuid)
+		if len(handler.channels) == 0 {
+			log.Infof("No more channels for prefix %s, stopping watch", prefix)
+			delete(s.prefixMap, prefix) // 删除无效的处理器
+		}
+	}
+}
+
+func (h *WatchHandler) Register(uuid string, ch *EventChannel) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
 	if h.channels == nil {
-		h.channels = make([]*EventChannel, 0, 100) // 初始化通道切片
-		go h.Watch()                               // 启动监听
+		h.channels = make(map[string]*EventChannel) // 初始化通道切片
+		go h.Watch()                                // 启动监听
 	}
-	h.channels = append(h.channels, ch)
+	h.channels[uuid] = ch
+}
+
+func (h *WatchHandler) UnRegister(uuid string) {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	if h.channels != nil {
+		if _, exists := h.channels[uuid]; exists {
+			delete(h.channels, uuid) // 删除通道
+		}
+		if len(h.channels) == 0 {
+			log.Infof("No more channels for prefix %s, stopping watch", h.prefix)
+			h.cancel()
+		}
+	}
 }
 
 func (h *WatchHandler) Watch() {

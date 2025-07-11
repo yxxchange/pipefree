@@ -14,10 +14,15 @@ func NewService(ctx context.Context) *Service {
 	}
 }
 
-func (s *Service) Watch(keyPrefix string) *EventChannel {
+func (s *Service) Watch(keyPrefix, uuid string) *EventChannel {
 	ch := &EventChannel{
-		ch: make(chan []byte, 100), // 设置缓冲区大小为100
+		ch:   make(chan []byte, 100), // 设置缓冲区大小为100
+		done: make(chan struct{}),
 	}
-	GetWatchServer().Register(keyPrefix, ch)
+	GetWatchServer().Register(keyPrefix, uuid, ch)
 	return ch
+}
+
+func (s *Service) UnWatch(keyPrefix, uuid string) {
+	GetWatchServer().UnRegister(keyPrefix, uuid)
 }

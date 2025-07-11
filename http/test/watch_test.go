@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"github.com/yxxchange/pipefree/config"
+	"github.com/yxxchange/pipefree/helper/log"
 	"github.com/yxxchange/pipefree/http"
 	"github.com/yxxchange/pipefree/infra/dal"
 	"github.com/yxxchange/pipefree/infra/etcd"
 	http2 "net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -42,6 +44,26 @@ func TestWatchPipe(t *testing.T) {
 	}
 }
 
+func TestWatchPipe_TestCancel(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	for i := 1; i < 10; i++ {
+		wg.Add(1)
+		go func(pipeId int) {
+			defer wg.Done()
+			c1 := &clientTest{
+				Endpoint: "http://localhost:" + viper.GetString("http.port"),
+				Timeout:  time.Second * time.Duration(i*5),
+			}
+			if err := c1.WatchPipe("default", "container", "test-pipe-"+strconv.Itoa(pipeId)); err != nil {
+				log.Errorf("%d failed to watch pipe: %s", pipeId, err.Error())
+			}
+		}(i)
+	}
+	wg.Wait()
+	fmt.Printf("All goroutines completed\n")
+	time.Sleep(1 * time.Second)
+}
+
 const (
 	PatchRunPipe = "/api/v1/pipe_exec/:id"
 	WatchPipe    = "/api/v1/operator/namespace/:namespace/kind/:kind"
@@ -49,6 +71,7 @@ const (
 
 type clientTest struct {
 	Endpoint string
+	Timeout  time.Duration
 }
 
 func (c *clientTest) RunPipe(pipeId int) error {
@@ -75,7 +98,10 @@ func (c *clientTest) WatchPipe(namespace, kind, name string) error {
 	if err != nil {
 		return err
 	}
-	resp, err := http2.DefaultClient.Do(req)
+	client := http2.Client{
+		Timeout: c.Timeout,
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send watch request: %w", err)
 	}
