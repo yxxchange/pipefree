@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/yxxchange/pipefree/helper/log"
+	"github.com/yxxchange/pipefree/helper/safe"
 	"github.com/yxxchange/pipefree/infra/etcd"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"sync"
@@ -82,7 +83,7 @@ func (h *WatchHandler) Register(uuid string, ch *EventChannel) {
 
 	if h.channels == nil {
 		h.channels = make(map[string]*EventChannel) // 初始化通道切片
-		go h.Watch()                                // 启动监听
+		safe.Go(h.Watch)                            // 启动监听
 	}
 	h.channels[uuid] = ch
 }
@@ -113,6 +114,7 @@ func (h *WatchHandler) Handle(result *clientv3.WatchResponse, closed bool) {
 		log.Infof("watch closed for prefix %s", h.prefix)
 		for _, ch := range h.channels {
 			ch.done <- struct{}{}
+			ch.Close() // 关闭通道
 		}
 		return
 	}

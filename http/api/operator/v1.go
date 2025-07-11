@@ -36,7 +36,6 @@ func Watch(c *gin.Context) {
 	op := operator.NewService(c)
 	eventCh := op.Watch(req.KeyPrefix(), identifier)
 	defer func() {
-		eventCh.Close()
 		op.UnWatch(req.KeyPrefix(), identifier)
 	}()
 	for {

@@ -3,9 +3,9 @@ package pipe_cfg
 import (
 	"context"
 	"github.com/yxxchange/pipefree/config"
-	"github.com/yxxchange/pipefree/helper/serialize"
 	"github.com/yxxchange/pipefree/infra/dal"
 	"github.com/yxxchange/pipefree/infra/dal/model"
+	"gopkg.in/yaml.v3"
 	"io"
 	"os"
 	"testing"
@@ -34,7 +34,7 @@ func TestService_Create(t *testing.T) {
 		PipeCfg     *model.PipeCfg   `yaml:"pipe"`
 		NodeCfgList []*model.NodeCfg `yaml:"nodes"`
 	}{}
-	err = serialize.YamlDeserialize(b, &tmp)
+	err = yaml.Unmarshal(b, &tmp)
 	if err != nil {
 		t.Fatalf("Failed to deserialize YAML: %v", err)
 	}
