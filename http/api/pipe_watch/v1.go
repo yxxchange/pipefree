@@ -1,11 +1,11 @@
-package operator
+package pipe_watch
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/yxxchange/pipefree/helper/log"
 	"github.com/yxxchange/pipefree/http/common"
-	"github.com/yxxchange/pipefree/service/operator"
+	"github.com/yxxchange/pipefree/service/pipe_watch"
 	"io"
 	"net/http"
 )
@@ -32,11 +32,11 @@ func Watch(c *gin.Context) {
 		common.ResponseError(c, -1, "response writer does not support flushing")
 		return
 	}
-	identifier := uuid.New().String()
-	op := operator.NewService(c)
-	eventCh := op.Watch(req.KeyPrefix(), identifier)
+	operator := pipe_watch.NewOperatorCtx(req.KeyPrefix(), uuid.New().String())
+	watchService := pipe_watch.NewService(c)
+	eventCh := watchService.Watch(operator)
 	defer func() {
-		op.UnWatch(req.KeyPrefix(), identifier)
+		watchService.UnWatch(operator)
 	}()
 	for {
 		select {
@@ -51,10 +51,15 @@ func Watch(c *gin.Context) {
 				return // 处理写入错误
 			}
 			flusher.Flush()
+		case err := <-eventCh.ErrCh(): // 连接断开
+			if err != nil {
+				log.Errorf(err.Error())
+				return
+			}
 		case <-c.Request.Context().Done():
-			log.Infof("watch closed for prefix %s", req.KeyPrefix())
-			common.ResponseOk(c, operator.CloseEvent()) // 返回关闭事件
-			return                                      // 处理上下文取消
+			log.Info("http context done, exit!")
+			common.ResponseOk(c, pipe_watch.CloseEvent()) // 返回关闭事件
+			return                                        // 处理上下文取消
 		}
 	}
 }

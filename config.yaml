@@ -5,8 +5,6 @@ app:
   deployment:
     mode: dev
     debug: true
-
-
 log:
   level: debug
   format: json
@@ -17,9 +15,8 @@ log:
       topic: pipeFree
       brokers:
             - localhost:9092
-
 http:
-  port: 8080
+  endpoint: http://localhost:8080
 
 mysql:
   host: localhost
@@ -28,9 +25,6 @@ mysql:
   password: 123456
   database: pipeFree
   migrate: true
-
-
-
 etcd:
   endpoints:
     - http://127.0.0.1:2379

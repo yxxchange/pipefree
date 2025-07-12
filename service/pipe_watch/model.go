@@ -1,4 +1,4 @@
-package operator
+package pipe_watch
 
 import (
 	"encoding/json"
@@ -6,15 +6,30 @@ import (
 	"github.com/yxxchange/pipefree/helper/log"
 	"github.com/yxxchange/pipefree/infra/dal/model"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"sync"
 )
 
 type EventChannel struct {
-	ch   chan []byte
-	done chan struct{}
+	once   sync.Once
+	ch     chan []byte
+	done   chan struct{}
+	errMsg chan error
+}
+
+func NewEventChannel() *EventChannel {
+	return &EventChannel{
+		ch:     make(chan []byte, 100),
+		done:   make(chan struct{}),
+		errMsg: make(chan error, 100),
+	}
 }
 
 func (ec *EventChannel) Ch() <-chan []byte {
 	return ec.ch
+}
+
+func (ec *EventChannel) ErrCh() <-chan error {
+	return ec.errMsg
 }
 
 func (ec *EventChannel) Done() <-chan struct{} {
@@ -22,8 +37,15 @@ func (ec *EventChannel) Done() <-chan struct{} {
 }
 
 func (ec *EventChannel) Close() {
-	close(ec.done) // 关闭done通道
-	close(ec.ch)   // 关闭事件通道
+	once.Do(func() {
+		close(ec.done)
+		close(ec.ch)
+		close(ec.errMsg)
+	})
+}
+
+func (ec *EventChannel) SendErr(err error) {
+	ec.errMsg <- err
 }
 
 type EventType string
@@ -101,5 +123,19 @@ func Convert(event *clientv3.Event) Event {
 		NodeExec: nodeExec,
 		ErrMsg:   "",
 		Revision: event.Kv.Version,
+	}
+}
+
+type OperatorCtx struct {
+	StreamID     string
+	UUID         string
+	EventChannel *EventChannel
+}
+
+func NewOperatorCtx(streamID, uuid string) OperatorCtx {
+	return OperatorCtx{
+		StreamID:     streamID,
+		UUID:         uuid,
+		EventChannel: NewEventChannel(),
 	}
 }

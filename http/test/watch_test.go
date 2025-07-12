@@ -51,7 +51,7 @@ func TestWatchPipe_TestCancel(t *testing.T) {
 		go func(pipeId int) {
 			defer wg.Done()
 			c1 := &clientTest{
-				Endpoint: "http://localhost:" + viper.GetString("http.port"),
+				Endpoint: viper.GetString("http.endpoint"),
 				Timeout:  time.Second * time.Duration(i*5),
 			}
 			if err := c1.WatchPipe("default", "container", "test-pipe-"+strconv.Itoa(pipeId)); err != nil {

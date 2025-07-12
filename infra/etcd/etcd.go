@@ -102,31 +102,19 @@ func PutWithLease(ctx context.Context, key, value string, leaseID clientv3.Lease
 }
 
 // GetWithPrefix 获取指定前缀的所有键值对
-func GetWithPrefix(ctx context.Context, prefix string) (map[string]Response, error) {
-	resp, err := cli.Get(ctx, prefix, clientv3.WithPrefix())
-	if err != nil {
-		return nil, err
-	}
-	result := make(map[string]Response, len(resp.Kvs))
-	for _, kv := range resp.Kvs {
-		result[string(kv.Key)] = Response{
-			Key:      kv.Key,
-			Value:    kv.Value,
-			Revision: resp.Header.Revision,
-		}
-	}
-	return result, nil
+func GetWithPrefix(ctx context.Context, prefix string) (*clientv3.GetResponse, error) {
+	return cli.Get(ctx, prefix, clientv3.WithPrefix())
 }
 
 // Transfer 事件处理函数类型
 type Transfer func(result *clientv3.WatchResponse, closed bool)
 
 // Watch 监听指定前缀的变化
-func Watch(ctx context.Context, prefix string, transfer Transfer) {
+func Watch(ctx context.Context, prefix string, revSince int64, transfer Transfer) {
 	defer func() {
 		transfer(&clientv3.WatchResponse{}, true) // 传递一个空的 WatchResponse 表示关闭
 	}()
-	rch := cli.Watch(ctx, prefix, clientv3.WithPrefix())
+	rch := cli.Watch(ctx, prefix, clientv3.WithPrefix(), clientv3.WithRev(revSince))
 	for {
 		select {
 		case <-ctx.Done():

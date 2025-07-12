@@ -35,15 +35,6 @@ func init() {
 	builtinLog()
 }
 
-func Init() {
-	NewBuilder().
-		LogTo(os.Stdout).
-		LogWhen(zapcore.InfoLevel).
-		EncodeWith(DefaultCfg, JsonFormat).
-		EnableCaller().
-		StackTraceOn(zapcore.ErrorLevel)
-}
-
 type ILogger interface {
 	Debug(msg string)
 	Debugf(format string, args ...interface{})
